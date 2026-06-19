@@ -2,392 +2,170 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>ぽこたんバトル⚔️</title>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Decol:wght@400;700&display=swap');
-
-:root {
-  --bg: #0d0d1a;
-  --panel: #13132a;
-  --card: #1e1e3f;
-  --border: #2a2a5a;
-  --accent: #e94560;
-  --gold: #f5a623;
-  --green: #4ecca3;
-  --blue: #5b9cf6;
-  --purple: #9b59b6;
-  --text: #eaeaea;
-  --muted: #6a6a9a;
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1a1a2e;--panel:#16213e;--card:#0f3460;--border:#533483;
+  --green:#4ecca3;--gold:#f5a623;--red:#e94560;--blue:#5b9cf6;
+  --text:#eaeaea;--muted:#8888aa;
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DotGothic16', monospace;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  background-image:
-    radial-gradient(ellipse at 10% 0%, rgba(91,156,246,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 90% 100%, rgba(233,69,96,0.08) 0%, transparent 60%);
-}
+body{background:var(--bg);font-family:'DotGothic16',monospace;color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;}
 
 /* ─── SCREENS ─── */
-.screen { display: none; width: 100%; max-width: 520px; flex-direction: column; align-items: center; gap: 14px; }
-.screen.active { display: flex; }
+.screen{display:none;width:100%;max-width:480px;min-height:100vh;flex-direction:column;align-items:center;padding:16px;gap:12px;}
+.screen.active{display:flex;}
 
-/* ─── TITLE ─── */
-.logo {
-  font-family: 'Kaisei Decol', serif;
-  font-size: clamp(1.6rem,6vw,2.4rem);
-  color: var(--gold);
-  text-shadow: 0 0 24px rgba(245,166,35,.6);
-  text-align: center;
-  line-height: 1.2;
-}
-.logo span { color: var(--accent); }
-.tagline { color: var(--muted); font-size: .72rem; text-align: center; }
+/* ─── COMMON ─── */
+.logo{font-size:clamp(1.8rem,7vw,2.6rem);color:var(--gold);text-shadow:0 0 20px rgba(245,166,35,.5);text-align:center;margin-top:16px;}
+.logo em{color:var(--red);font-style:normal;}
+.panel{background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:16px;width:100%;}
+.panel-title{color:var(--gold);font-size:.85rem;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+input[type=text]{width:100%;background:var(--bg);border:2px solid var(--border);border-radius:8px;color:var(--text);font-family:'DotGothic16',monospace;font-size:.9rem;padding:10px 12px;outline:none;margin-bottom:8px;}
+input[type=text]:last-child{margin-bottom:0;}
+input[type=text]:focus{border-color:var(--green);}
+.btn{border:none;border-radius:8px;cursor:pointer;font-family:'DotGothic16',monospace;font-size:.88rem;padding:12px 20px;width:100%;transition:opacity .15s,transform .1s;}
+.btn:hover{opacity:.88;transform:translateY(-1px);}
+.btn:active{transform:translateY(0);opacity:.75;}
+.btn-green{background:var(--green);color:#0d1a15;font-weight:bold;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-muted{background:#333355;color:var(--text);}
+.btn-row{display:flex;gap:8px;width:100%;}
+.btn-row .btn{flex:1;}
+.msg{font-size:.75rem;color:var(--muted);text-align:center;}
+.msg.error{color:var(--red);}
+.room-code{font-size:3rem;letter-spacing:10px;color:var(--green);text-align:center;text-shadow:0 0 20px rgba(78,204,163,.4);padding:16px 0;}
+.dots::after{content:'...';animation:dotAnim 1.2s steps(4,end) infinite;}
+@keyframes dotAnim{0%,100%{content:'.'}33%{content:'..'}66%{content:'...'}}
 
-/* ─── PANELS ─── */
-.panel {
-  background: var(--panel);
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
-  width: 100%;
-}
-.panel-title {
-  font-family: 'Kaisei Decol', serif;
-  color: var(--gold);
-  font-size: .95rem;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-}
+/* ═══════════════════════════════
+   BATTLE SCREEN
+═══════════════════════════════ */
+#screenBattle{padding:0;max-width:480px;min-height:100vh;display:none;flex-direction:column;background:var(--bg);}
+#screenBattle.active{display:flex;}
 
-/* ─── INPUTS ─── */
-input[type=text] {
-  width: 100%;
-  background: var(--bg);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-family: 'DotGothic16', monospace;
-  font-size: .95rem;
-  padding: 11px 14px;
-  outline: none;
-  transition: border-color .2s;
+/* FIELD */
+.battle-field{
+  position:relative;width:100%;height:54vw;max-height:260px;min-height:210px;overflow:hidden;
+  background:linear-gradient(180deg,#1a0a3a 0%,#2a1060 45%,#1a3a10 45%,#0d2008 100%);
 }
-input[type=text]:focus { border-color: var(--green); }
-
-/* ─── BUTTONS ─── */
-.btn {
-  border: none; border-radius: 10px; cursor: pointer;
-  font-family: 'DotGothic16', monospace; font-size: .9rem;
-  padding: 12px 24px; transition: opacity .15s, transform .1s;
-  width: 100%;
+/* platforms */
+.battle-field::before,.battle-field::after{
+  content:'';position:absolute;border-radius:50%;
 }
-.btn:hover { opacity: .85; transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
-.btn-green  { background: var(--green);  color: #0d0d1a; font-weight: bold; }
-.btn-accent { background: var(--accent); color: #fff; }
-.btn-blue   { background: var(--blue);   color: #fff; }
-.btn-muted  { background: var(--border); color: var(--text); }
-.btn-small  { padding: 8px 16px; font-size: .78rem; width: auto; }
-
-.btn-row { display: flex; gap: 10px; width: 100%; }
-.btn-row .btn { flex: 1; }
-
-/* ─── ROOM CODE ─── */
-.room-code-display {
-  font-family: 'Kaisei Decol', serif;
-  font-size: 2.8rem;
-  color: var(--green);
-  text-align: center;
-  letter-spacing: 8px;
-  text-shadow: 0 0 20px rgba(78,204,163,.4);
-  padding: 12px 0;
+.battle-field::before{/* enemy platform */
+  width:160px;height:50px;background:#1e4a10;border:2px solid #0d2808;
+  right:-10px;top:42%;
 }
-.room-label { font-size: .68rem; color: var(--muted); text-align: center; margin-top: -8px; }
-
-/* ─── WAITING ─── */
-.waiting-dots::after {
-  content: '...';
-  animation: dots 1.2s steps(4,end) infinite;
-}
-@keyframes dots {
-  0%,100%{content:'.'} 33%{content:'..'} 66%{content:'...'}
+.battle-field::after{/* player platform */
+  width:175px;height:55px;background:#1e4a10;border:2px solid #0d2808;
+  left:-10px;bottom:8%;
 }
 
-/* ─── BATTLE FIELD ─── */
-.battlefield {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* status panels */
+.status-panel{
+  position:absolute;background:rgba(10,8,30,.9);border:2px solid rgba(160,140,220,.35);
+  border-radius:8px;padding:7px 10px;z-index:5;
 }
+.status-enemy{top:8px;left:8px;min-width:170px;}
+.status-player{bottom:8px;right:8px;min-width:185px;}
+.s-name{font-size:.78rem;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:6px;}
+.s-lv{font-size:.65rem;color:var(--muted);}
+.hp-row{display:flex;align-items:center;gap:4px;margin-top:5px;}
+.hp-label{font-size:.65rem;color:var(--gold);width:16px;}
+.hp-track{flex:1;height:7px;background:#222;border-radius:4px;overflow:hidden;}
+.hp-fill{height:100%;border-radius:4px;background:var(--green);transition:width .5s ease,background .3s;}
+.hp-nums{font-size:.62rem;color:var(--muted);min-width:46px;text-align:right;}
+.exp-row{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.exp-label{font-size:.58rem;color:var(--blue);width:24px;}
+.exp-track{flex:1;height:5px;background:#222;border-radius:4px;overflow:hidden;}
+.exp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),#a855f7);transition:width .5s ease;}
 
-/* fighter card */
-.fighter {
-  background: var(--panel);
-  border: 2px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-}
-.fighter.enemy { flex-direction: row-reverse; }
-.fighter.enemy .fighter-info { align-items: flex-end; text-align: right; }
+/* sprites */
+.sprite{position:absolute;image-rendering:pixelated;}
+.sprite-enemy{width:88px;height:88px;right:24px;top:calc(42% - 78px);transform:scaleX(-1);}
+.sprite-player{width:88px;height:88px;left:24px;bottom:calc(8% + 14px);}
 
-.fighter-canvas {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  width: 72px; height: 72px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  background: #0a0a16;
-  flex-shrink: 0;
-}
-.fighter-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.fighter-name { font-family:'Kaisei Decol',serif; font-size: .95rem; color: var(--gold); }
-.fighter-lv   { font-size: .65rem; color: var(--muted); }
+/* ACTION BOX */
+.action-box{flex:1;background:var(--panel);border-top:3px solid var(--border);display:flex;flex-direction:column;padding:10px 12px;gap:8px;min-height:190px;}
+.battle-msg{background:var(--bg);border:2px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.8rem;color:var(--text);min-height:44px;line-height:1.7;}
 
-.hp-bar-wrap {
-  background: var(--bg);
-  border-radius: 99px;
-  height: 8px;
-  overflow: hidden;
+/* WAZA GRID */
+.waza-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.waza-btn{
+  background:var(--card);border:2px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'DotGothic16',monospace;font-size:.76rem;
+  padding:9px 6px;cursor:pointer;text-align:center;line-height:1.5;
+  transition:all .12s;display:flex;flex-direction:column;align-items:center;gap:2px;
 }
-.hp-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width .5s ease, background .3s;
-}
-.hp-text { font-size: .65rem; color: var(--muted); }
+.waza-btn:hover:not(:disabled){border-color:var(--gold);transform:translateY(-1px);}
+.waza-btn:disabled{opacity:.3;cursor:not-allowed;}
+.waza-btn.selected{border-color:var(--green);background:rgba(78,204,163,.12);}
+.waza-btn.locked{border-style:dashed;}
+.w-icon{font-size:1.2rem;}
+.w-name{color:var(--gold);font-size:.7rem;}
+.w-desc{color:var(--muted);font-size:.56rem;}
+.waza-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.waza-hdr span{font-size:.75rem;color:var(--gold);}
+.waza-timer{font-size:.8rem;color:var(--red);font-weight:bold;}
 
-/* status badge */
-.status-badge {
-  position: absolute;
-  top: -8px; right: 12px;
-  background: var(--purple);
-  color: #fff;
-  font-size: .6rem;
-  padding: 2px 8px;
-  border-radius: 99px;
-  display: none;
+/* QUESTION */
+.q-waza-row{font-size:.62rem;color:var(--muted);text-align:center;}
+.q-word{font-size:clamp(1.8rem,8vw,2.8rem);color:#fff;text-align:center;letter-spacing:3px;text-shadow:0 0 20px rgba(78,204,163,.3);padding:2px 0;}
+.timer-wrap{background:#1a1a30;border-radius:99px;height:7px;overflow:hidden;margin:3px 0;}
+.timer-fill{height:100%;border-radius:99px;background:var(--green);transition:width .1s linear,background .3s;}
+.choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.choice-btn{
+  border:none;border-radius:10px;color:#fff;
+  font-family:'DotGothic16',monospace;font-size:.84rem;
+  padding:13px 8px;cursor:pointer;transition:opacity .1s,transform .08s;
+  text-shadow:0 1px 2px rgba(0,0,0,.4);font-weight:bold;
 }
+.choice-btn:nth-child(1){background:#c0392b;}
+.choice-btn:nth-child(2){background:#c47c1a;}
+.choice-btn:nth-child(3){background:#1e8a4a;}
+.choice-btn:nth-child(4){background:#1a5fa0;}
+.choice-btn:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}
+.choice-btn:disabled{cursor:not-allowed;}
+.choice-btn.correct{outline:3px solid var(--green);opacity:1 !important;}
+.choice-btn.wrong{opacity:.25 !important;}
+.choice-btn.dimmed{opacity:.35;}
+.choice-btn.locked-out{opacity:.4 !important;}
 
-/* VS divider */
-.vs-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-}
-.vs-text {
-  font-family:'Kaisei Decol',serif;
-  font-size: 1.4rem;
-  color: var(--accent);
-  text-shadow: 0 0 12px rgba(233,69,96,.5);
-}
-.turn-indicator {
-  font-size: .7rem;
-  color: var(--muted);
-  background: var(--card);
-  border-radius: 99px;
-  padding: 3px 10px;
-}
+/* RESULT */
+.result-title{font-size:2.4rem;text-align:center;margin-top:28px;}
+.result-win{color:var(--gold);text-shadow:0 0 30px rgba(245,166,35,.5);}
+.result-lose{color:var(--red);text-shadow:0 0 30px rgba(233,69,96,.5);}
 
-/* ─── WAZA PANEL ─── */
-.waza-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  width: 100%;
-}
-.waza-btn {
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-family: 'DotGothic16', monospace;
-  font-size: .8rem;
-  padding: 10px 8px;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: center;
-  line-height: 1.4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.waza-btn:hover:not(:disabled) { border-color: var(--gold); transform: translateY(-2px); }
-.waza-btn:disabled { opacity: .3; cursor: not-allowed; }
-.waza-btn .waza-icon { font-size: 1.3rem; }
-.waza-btn .waza-name { font-size: .75rem; color: var(--gold); }
-.waza-btn .waza-desc { font-size: .6rem; color: var(--muted); }
-.waza-btn.locked { border-style: dashed; }
-.waza-btn.locked .waza-name { color: var(--muted); }
-
-/* ─── QUESTION ─── */
-.q-word {
-  font-family: 'Kaisei Decol', serif;
-  font-size: clamp(2rem,8vw,3rem);
-  color: #fff;
-  text-align: center;
-  letter-spacing: 4px;
-  text-shadow: 0 0 30px rgba(78,204,163,.3);
-  padding: 8px 0;
-}
-.q-meta { font-size: .68rem; color: var(--muted); text-align: center; }
-.choices-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  width: 100%;
-}
-.choice-btn {
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-family: 'DotGothic16', monospace;
-  font-size: .88rem;
-  padding: 14px 10px;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: center;
-}
-.choice-btn:hover:not(:disabled) { border-color: var(--blue); background: rgba(91,156,246,.1); }
-.choice-btn:disabled { cursor: not-allowed; }
-.choice-btn.correct { border-color: var(--green); background: rgba(78,204,163,.15); color: var(--green); }
-.choice-btn.wrong   { border-color: var(--accent); background: rgba(233,69,96,.1); color: var(--accent); }
-
-.timer-bar-wrap {
-  background: var(--bg);
-  border-radius: 99px;
-  height: 6px;
-  overflow: hidden;
-  width: 100%;
-}
-.timer-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--green);
-  transition: width .1s linear, background .3s;
-}
-
-/* ─── BATTLE LOG ─── */
-.battle-log {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: .72rem;
-  color: var(--muted);
-  min-height: 48px;
-  width: 100%;
-  line-height: 1.7;
-}
-.log-hit    { color: var(--accent); }
-.log-miss   { color: var(--blue); }
-.log-system { color: var(--gold); }
-.log-evo    { color: var(--green); }
-
-/* ─── EXP BAR ─── */
-.exp-row {
-  display: flex; justify-content: space-between;
-  font-size: .62rem; color: var(--muted); margin-bottom: 3px;
-}
-.exp-bar-wrap {
-  background: var(--bg); border-radius: 99px; height: 6px; overflow: hidden;
-}
-.exp-bar-fill {
-  height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, var(--blue), var(--purple));
-  transition: width .5s ease;
-}
-
-/* ─── RESULT SCREEN ─── */
-.result-title {
-  font-family: 'Kaisei Decol', serif;
-  font-size: 2.2rem;
-  text-align: center;
-  text-shadow: 0 0 24px currentColor;
-}
-.result-win  { color: var(--gold); }
-.result-lose { color: var(--accent); }
-
-/* ─── MISC ─── */
-.divider { width:100%; height:1px; background: var(--border); }
-.msg { font-size: .78rem; color: var(--muted); text-align: center; }
-.msg.error { color: var(--accent); }
-.msg.success { color: var(--green); }
-.category-chips {
-  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
-}
-.chip {
-  font-size: .62rem; padding: 3px 10px; border-radius: 99px;
-  border: 1px solid var(--border); color: var(--muted);
-}
-.chip.unlocked { border-color: var(--green); color: var(--green); }
-
-/* overlay for damage flash */
-.damage-flash {
-  position: fixed; inset: 0;
-  pointer-events: none;
-  border: 6px solid transparent;
-  border-radius: 0;
-  transition: border-color .1s;
-  z-index: 50;
-}
-.damage-flash.hit { border-color: rgba(233,69,96,.6); }
-
-@keyframes shake {
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-6px)}
-  40%{transform:translateX(6px)}
-  60%{transform:translateX(-4px)}
-  80%{transform:translateX(4px)}
-}
-.shake { animation: shake .35s ease; }
+/* DAMAGE FLASH */
+.dmg-flash{position:fixed;inset:0;pointer-events:none;border:0px solid transparent;z-index:100;transition:border .05s;}
+.dmg-flash.hit{border:8px solid rgba(233,69,96,.65);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .3s ease;}
 </style>
 </head>
 <body>
-<div class="damage-flash" id="damageFlash"></div>
+<div class="dmg-flash" id="dmgFlash"></div>
 
-<!-- ═══ SCREEN 1: TITLE ═══ -->
+<!-- ═══ TITLE ═══ -->
 <div class="screen active" id="screenTitle">
-  <div style="height:20px"></div>
-  <div class="logo">⚔️ぽこたん<span>バトル</span>⚔️</div>
-  <div class="tagline">えいごでたたかえ！リアルタイムバトル</div>
-
+  <div class="logo">⚔️ぽこたん<em>バトル</em>⚔️</div>
   <canvas id="titleCanvas" width="24" height="24"
-    style="image-rendering:pixelated;width:100px;height:100px;border:2px solid #2a2a5a;border-radius:12px;background:#0a0a16"></canvas>
-
+    style="image-rendering:pixelated;width:96px;height:96px;border:2px solid #533483;border-radius:10px;background:#0a0a16;margin:4px auto"></canvas>
   <div class="panel">
-    <div class="panel-title">👤 なままえをいれよう</div>
+    <div class="panel-title">👤 なまえをいれよう</div>
     <input type="text" id="inputName" placeholder="ぷれいやーなまえ" maxlength="10">
   </div>
-
   <div class="panel">
     <div class="panel-title">🔥 Firebase せってい</div>
-    <input type="text" id="inputFbUrl" placeholder="Database URL (https://xxx.firebaseio.com)" style="margin-bottom:8px">
+    <input type="text" id="inputFbUrl" placeholder="Database URL (https://xxx.firebaseio.com)">
     <input type="text" id="inputFbApiKey" placeholder="API Key">
-    <div class="msg" style="margin-top:6px">※ Firebaseの設定はこちら → <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue)">console.firebase.google.com</a></div>
+    <div class="msg" style="margin-top:4px">※ <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue)">console.firebase.google.com</a></div>
   </div>
-
   <div class="btn-row">
     <button class="btn btn-green" onclick="createRoom()">🏠 へやをつくる</button>
     <button class="btn btn-blue"  onclick="showJoin()">🚪 へやにはいる</button>
@@ -395,116 +173,98 @@ input[type=text]:focus { border-color: var(--green); }
   <div id="msgTitle" class="msg"></div>
 </div>
 
-<!-- ═══ SCREEN 1b: JOIN ═══ -->
+<!-- ═══ JOIN ═══ -->
 <div class="screen" id="screenJoin">
-  <div class="logo" style="font-size:1.4rem">🚪 へやにはいる</div>
+  <div class="logo" style="font-size:1.5rem;margin-top:20px">🚪 へやにはいる</div>
   <div class="panel">
     <div class="panel-title">へやコードをいれよう</div>
     <input type="text" id="inputRoomCode" placeholder="4けたのコード" maxlength="4"
       style="font-size:2rem;text-align:center;letter-spacing:8px">
   </div>
   <div class="btn-row">
-    <button class="btn btn-muted btn-small" style="width:auto;flex:0" onclick="showScreen('screenTitle')">← もどる</button>
+    <button class="btn btn-muted" style="flex:0;width:auto;padding:12px 16px" onclick="showScreen('screenTitle')">← もどる</button>
     <button class="btn btn-green" onclick="joinRoom()">はいる！</button>
   </div>
   <div id="msgJoin" class="msg"></div>
 </div>
 
-<!-- ═══ SCREEN 2: WAITING ═══ -->
+<!-- ═══ WAITING ═══ -->
 <div class="screen" id="screenWaiting">
-  <div class="logo" style="font-size:1.4rem">🏠 へやをつくったよ！</div>
+  <div class="logo" style="font-size:1.5rem;margin-top:20px">🏠 へやをつくったよ！</div>
   <div class="panel" style="text-align:center">
     <div class="panel-title">ともだちにこのコードをおしえよう</div>
-    <div class="room-code-display" id="displayRoomCode">----</div>
-    <div class="room-label">4けたのへやコード</div>
+    <div class="room-code" id="displayRoomCode">----</div>
+    <div class="msg">4けたのへやコード</div>
   </div>
-  <div class="panel">
-    <div style="text-align:center;color:var(--muted);font-size:.8rem">
-      ともだちがくるのをまってるよ<span class="waiting-dots"></span>
-    </div>
-  </div>
+  <div class="panel"><div class="msg">ともだちがくるのをまってるよ<span class="dots"></span></div></div>
   <button class="btn btn-muted" onclick="cancelRoom()">キャンセル</button>
 </div>
 
-<!-- ═══ SCREEN 3: BATTLE ═══ -->
+<!-- ═══ BATTLE ═══ -->
 <div class="screen" id="screenBattle">
-
-  <!-- enemy -->
-  <div class="battlefield">
-    <div class="fighter enemy" id="fighterEnemy">
-      <div class="status-badge" id="enemyStatus"></div>
-      <canvas class="fighter-canvas" id="enemyCanvas" width="24" height="24"></canvas>
-      <div class="fighter-info">
-        <div class="fighter-name" id="enemyName">？？？</div>
-        <div class="fighter-lv"  id="enemyLv">LV.1</div>
-        <div class="exp-row"><span>HP</span><span id="enemyHpText">100/100</span></div>
-        <div class="hp-bar-wrap"><div class="hp-bar-fill" id="enemyHpBar" style="width:100%;background:var(--green)"></div></div>
+  <div class="battle-field">
+    <!-- 敵ステータス（左上） -->
+    <div class="status-panel status-enemy">
+      <div class="s-name"><span id="enemyName">てき</span><span class="s-lv" id="enemyLv">LV.1</span></div>
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" id="enemyHpFill" style="width:100%"></div></div>
       </div>
     </div>
-
-    <div class="vs-row">
-      <div class="vs-text">VS</div>
-      <div class="turn-indicator" id="turnIndicator">じゅんびちゅう…</div>
-    </div>
-
-    <!-- player -->
-    <div class="fighter" id="fighterPlayer">
-      <div class="status-badge" id="playerStatus"></div>
-      <canvas class="fighter-canvas" id="playerCanvas" width="24" height="24"></canvas>
-      <div class="fighter-info">
-        <div class="fighter-name" id="playerName">あなた</div>
-        <div class="fighter-lv"  id="playerLv">LV.1</div>
-        <div class="exp-row"><span>HP</span><span id="playerHpText">100/100</span></div>
-        <div class="hp-bar-wrap"><div class="hp-bar-fill" id="playerHpBar" style="width:100%;background:var(--green)"></div></div>
+    <!-- 敵スプライト（右上） -->
+    <canvas class="sprite sprite-enemy" id="enemyCanvas" width="24" height="24"></canvas>
+    <!-- 自スプライト（左下） -->
+    <canvas class="sprite sprite-player" id="playerCanvas" width="24" height="24"></canvas>
+    <!-- 自ステータス（右下） -->
+    <div class="status-panel status-player">
+      <div class="s-name"><span id="playerName">あなた</span><span class="s-lv" id="playerLv">LV.1</span></div>
+      <div class="hp-row">
+        <span class="hp-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" id="playerHpFill" style="width:100%"></div></div>
+        <span class="hp-nums" id="playerHpNums">100/100</span>
+      </div>
+      <div class="exp-row">
+        <span class="exp-label">EXP</span>
+        <div class="exp-track"><div class="exp-fill" id="expFill" style="width:0%"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- EXP -->
-  <div style="width:100%">
-    <div class="exp-row"><span>EXP</span><span id="expText">0/10</span></div>
-    <div class="exp-bar-wrap"><div class="exp-bar-fill" id="expBar" style="width:0%"></div></div>
-  </div>
+  <!-- アクションボックス -->
+  <div class="action-box">
+    <div class="battle-msg" id="battleMsg">バトルかいし！</div>
 
-  <!-- battle log -->
-  <div class="battle-log" id="battleLog">バトルかいし！</div>
-
-  <!-- ATTACK PHASE -->
-  <div id="phaseAttack" style="width:100%;display:none">
-    <div class="panel">
-      <div class="panel-title">⚔️ わざをえらぼう！</div>
+    <!-- わざ選択 -->
+    <div id="phaseWaza" style="display:none">
+      <div class="waza-hdr">
+        <span>⚔️ わざをえらぼう！</span>
+        <span class="waza-timer" id="wazaCountdown">5</span>
+      </div>
       <div class="waza-grid" id="wazaGrid"></div>
     </div>
-  </div>
 
-  <!-- QUESTION PHASE (defending) -->
-  <div id="phaseQuestion" style="width:100%;display:none">
-    <div class="panel">
-      <div class="panel-title" id="qPhaseTitle">❓ といかけてくる！こたえよう！</div>
-      <div class="timer-bar-wrap"><div class="timer-bar-fill" id="timerBar" style="width:100%"></div></div>
-      <div style="height:8px"></div>
-      <div class="q-word"   id="qWord">---</div>
-      <div class="q-meta"   id="qMeta"></div>
+    <!-- 問題 -->
+    <div id="phaseQuestion" style="display:none">
+      <div class="q-waza-row" id="qWazaRow"></div>
+      <div class="q-word" id="qWord">---</div>
+      <div class="timer-wrap"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
       <div class="choices-grid" id="choicesGrid"></div>
     </div>
-  </div>
 
-  <!-- WAITING FOR OPPONENT -->
-  <div id="phaseWait" style="width:100%;display:none">
-    <div class="panel" style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">
-      あいての　こうげきをまってるよ<span class="waiting-dots"></span>
+    <!-- 待機 -->
+    <div id="phaseWait" style="display:none">
+      <div class="msg" style="padding:8px 0">あいてのこうどうをまってるよ<span class="dots"></span></div>
     </div>
   </div>
-
 </div>
 
-<!-- ═══ SCREEN 4: RESULT ═══ -->
+<!-- ═══ RESULT ═══ -->
 <div class="screen" id="screenResult">
   <div class="result-title" id="resultTitle">WIN!</div>
   <canvas id="resultCanvas" width="24" height="24"
-    style="image-rendering:pixelated;width:120px;height:120px;border:2px solid #2a2a5a;border-radius:12px;background:#0a0a16"></canvas>
+    style="image-rendering:pixelated;width:120px;height:120px;border:2px solid #533483;border-radius:10px;background:#0a0a16;margin:8px auto"></canvas>
   <div class="panel" style="text-align:center">
-    <div id="resultMsg" style="font-size:.85rem;line-height:1.8"></div>
+    <div id="resultMsg" style="font-size:.85rem;line-height:1.9"></div>
   </div>
   <div class="btn-row">
     <button class="btn btn-green" onclick="playAgain()">もういちど！</button>
@@ -513,722 +273,505 @@ input[type=text]:focus { border-color: var(--green); }
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  WORD DATA  200語
-// ══════════════════════════════════════════
-const CATEGORIES = [
-  { name:"体・顔",   minLv:1,  words:[
-    {en:"eye",jp:"め"},{en:"ear",jp:"みみ"},{en:"nose",jp:"はな"},
-    {en:"mouth",jp:"くち"},{en:"hand",jp:"て"},{en:"foot",jp:"あし"},
-    {en:"head",jp:"あたま"},{en:"arm",jp:"うで"},{en:"leg",jp:"あし（脚）"},
-    {en:"finger",jp:"ゆび"}]},
-  { name:"色",       minLv:1,  words:[
-    {en:"red",jp:"あか"},{en:"blue",jp:"あお"},{en:"green",jp:"みどり"},
-    {en:"yellow",jp:"きいろ"},{en:"white",jp:"しろ"},{en:"black",jp:"くろ"},
-    {en:"pink",jp:"ピンク"},{en:"orange",jp:"オレンジ"},{en:"purple",jp:"むらさき"},
-    {en:"brown",jp:"ちゃいろ"}]},
-  { name:"数",       minLv:11, words:[
-    {en:"one",jp:"いち"},{en:"two",jp:"に"},{en:"three",jp:"さん"},
-    {en:"four",jp:"よん"},{en:"five",jp:"ご"},{en:"six",jp:"ろく"},
-    {en:"seven",jp:"なな"},{en:"eight",jp:"はち"},{en:"nine",jp:"きゅう"},
-    {en:"ten",jp:"じゅう"}]},
-  { name:"食べ物",   minLv:11, words:[
-    {en:"rice",jp:"ごはん"},{en:"bread",jp:"パン"},{en:"milk",jp:"ぎゅうにゅう"},
-    {en:"egg",jp:"たまご"},{en:"apple",jp:"りんご"},{en:"banana",jp:"バナナ"},
-    {en:"cake",jp:"ケーキ"},{en:"juice",jp:"ジュース"},{en:"pizza",jp:"ピザ"},
-    {en:"salad",jp:"サラダ"}]},
-  { name:"動物",     minLv:21, words:[
-    {en:"dog",jp:"いぬ"},{en:"cat",jp:"ねこ"},{en:"bird",jp:"とり"},
-    {en:"fish",jp:"さかな"},{en:"rabbit",jp:"うさぎ"},{en:"horse",jp:"うま"},
-    {en:"lion",jp:"ライオン"},{en:"tiger",jp:"とら"},{en:"bear",jp:"くま"},
-    {en:"elephant",jp:"ぞう"}]},
-  { name:"学校",     minLv:21, words:[
-    {en:"book",jp:"ほん"},{en:"pen",jp:"ペン"},{en:"bag",jp:"かばん"},
-    {en:"desk",jp:"つくえ"},{en:"chair",jp:"いす"},{en:"school",jp:"がっこう"},
-    {en:"class",jp:"クラス"},{en:"teacher",jp:"せんせい"},{en:"friend",jp:"ともだち"},
-    {en:"name",jp:"なまえ"}]},
-  { name:"天気",     minLv:31, words:[
-    {en:"sunny",jp:"はれ"},{en:"cloudy",jp:"くもり"},{en:"rainy",jp:"あめ"},
-    {en:"snowy",jp:"ゆき"},{en:"windy",jp:"かぜがつよい"},{en:"hot",jp:"あつい"},
-    {en:"cold",jp:"さむい"},{en:"warm",jp:"あたたかい"},{en:"cool",jp:"すずしい"},
-    {en:"typhoon",jp:"たいふう"}]},
-  { name:"曜日",     minLv:31, words:[
-    {en:"Monday",jp:"げつようび"},{en:"Tuesday",jp:"かようび"},{en:"Wednesday",jp:"すいようび"},
-    {en:"Thursday",jp:"もくようび"},{en:"Friday",jp:"きんようび"},{en:"Saturday",jp:"どようび"},
-    {en:"Sunday",jp:"にちようび"},{en:"today",jp:"きょう"},{en:"tomorrow",jp:"あした"},
-    {en:"yesterday",jp:"きのう"}]},
-  { name:"乗り物",   minLv:41, words:[
-    {en:"train",jp:"でんしゃ"},{en:"bus",jp:"バス"},{en:"car",jp:"くるま"},
-    {en:"bike",jp:"じてんしゃ"},{en:"plane",jp:"ひこうき"},{en:"ship",jp:"ふね"},
-    {en:"taxi",jp:"タクシー"},{en:"ambulance",jp:"きゅうきゅうしゃ"},
-    {en:"helicopter",jp:"ヘリコプター"},{en:"rocket",jp:"ロケット"}]},
-  { name:"スポーツ", minLv:41, words:[
-    {en:"soccer",jp:"サッカー"},{en:"baseball",jp:"やきゅう"},{en:"swimming",jp:"すいえい"},
-    {en:"tennis",jp:"テニス"},{en:"basketball",jp:"バスケットボール"},
-    {en:"volleyball",jp:"バレーボール"},{en:"running",jp:"ランニング"},
-    {en:"skiing",jp:"スキー"},{en:"gymnastics",jp:"たいそう"},{en:"badminton",jp:"バドミントン"}]},
-  { name:"場所",     minLv:51, words:[
-    {en:"park",jp:"こうえん"},{en:"hospital",jp:"びょういん"},{en:"station",jp:"えき"},
-    {en:"library",jp:"としょかん"},{en:"restaurant",jp:"レストラン"},{en:"store",jp:"おみせ"},
-    {en:"zoo",jp:"どうぶつえん"},{en:"museum",jp:"はくぶつかん"},
-    {en:"airport",jp:"くうこう"},{en:"hotel",jp:"ホテル"}]},
-  { name:"家",       minLv:51, words:[
-    {en:"kitchen",jp:"だいどころ"},{en:"bedroom",jp:"しんしつ"},{en:"bathroom",jp:"おふろ"},
-    {en:"living room",jp:"リビング"},{en:"garden",jp:"にわ"},{en:"door",jp:"ドア"},
-    {en:"window",jp:"まど"},{en:"table",jp:"テーブル"},{en:"sofa",jp:"ソファ"},
-    {en:"stairs",jp:"かいだん"}]},
-  { name:"形容詞",   minLv:61, words:[
-    {en:"big",jp:"おおきい"},{en:"small",jp:"ちいさい"},{en:"long",jp:"ながい"},
-    {en:"short",jp:"みじかい"},{en:"fast",jp:"はやい"},{en:"slow",jp:"おそい"},
-    {en:"new",jp:"あたらしい"},{en:"old",jp:"ふるい"},{en:"strong",jp:"つよい"},
-    {en:"weak",jp:"よわい"}]},
-  { name:"気持ち",   minLv:61, words:[
-    {en:"happy",jp:"うれしい"},{en:"sad",jp:"かなしい"},{en:"angry",jp:"おこった"},
-    {en:"scared",jp:"こわい"},{en:"surprised",jp:"おどろいた"},{en:"tired",jp:"つかれた"},
-    {en:"hungry",jp:"おなかすいた"},{en:"excited",jp:"わくわく"},
-    {en:"lonely",jp:"さびしい"},{en:"proud",jp:"じまん"}]},
-  { name:"自然",     minLv:71, words:[
-    {en:"mountain",jp:"やま"},{en:"river",jp:"かわ"},{en:"sea",jp:"うみ"},
-    {en:"forest",jp:"もり"},{en:"flower",jp:"はな（花）"},{en:"tree",jp:"き"},
-    {en:"cloud",jp:"くも"},{en:"star",jp:"ほし"},{en:"moon",jp:"つき"},
-    {en:"sun",jp:"たいよう"}]},
-  { name:"季節",     minLv:71, words:[
-    {en:"spring",jp:"はる"},{en:"summer",jp:"なつ"},{en:"autumn",jp:"あき"},
-    {en:"winter",jp:"ふゆ"},{en:"rainbow",jp:"にじ"},{en:"earthquake",jp:"じしん"},
-    {en:"volcano",jp:"かざん"},{en:"island",jp:"しま"},{en:"desert",jp:"さばく"},
-    {en:"waterfall",jp:"たき"}]},
-  { name:"職業",     minLv:81, words:[
-    {en:"doctor",jp:"おいしゃさん"},{en:"nurse",jp:"かんごし"},{en:"police",jp:"けいかん"},
-    {en:"firefighter",jp:"しょうぼうし"},{en:"cook",jp:"りょうりにん"},
-    {en:"farmer",jp:"のうか"},{en:"singer",jp:"かしゅ"},{en:"athlete",jp:"せんしゅ"},
-    {en:"scientist",jp:"かがくしゃ"},{en:"astronaut",jp:"うちゅうひこうし"}]},
-  { name:"家族",     minLv:81, words:[
-    {en:"father",jp:"おとうさん"},{en:"mother",jp:"おかあさん"},
-    {en:"brother",jp:"おにいさん"},{en:"sister",jp:"おねえさん"},
-    {en:"grandfather",jp:"おじいさん"},{en:"grandmother",jp:"おばあさん"},
-    {en:"uncle",jp:"おじさん"},{en:"aunt",jp:"おばさん"},
-    {en:"baby",jp:"あかちゃん"},{en:"family",jp:"かぞく"}]},
-  { name:"時間",     minLv:91, words:[
-    {en:"morning",jp:"あさ"},{en:"afternoon",jp:"ひる"},{en:"evening",jp:"ゆうがた"},
-    {en:"night",jp:"よる"},{en:"hour",jp:"じかん"},{en:"minute",jp:"ふん"},
-    {en:"week",jp:"しゅう"},{en:"month",jp:"つき"},{en:"year",jp:"とし"},
-    {en:"birthday",jp:"たんじょうび"}]},
-  { name:"あいさつ", minLv:91, words:[
-    {en:"hello",jp:"こんにちは"},{en:"goodbye",jp:"さようなら"},
-    {en:"thank you",jp:"ありがとう"},{en:"sorry",jp:"ごめんなさい"},
-    {en:"please",jp:"おねがい"},{en:"yes",jp:"はい"},{en:"no",jp:"いいえ"},
-    {en:"help",jp:"たすけて"},{en:"welcome",jp:"ようこそ"},{en:"good luck",jp:"がんばれ"}]},
+// ═══════════════════════════
+//  WORD DATA (200語)
+// ═══════════════════════════
+const CATEGORIES=[
+  {name:"体・顔",minLv:1,words:[{en:"eye",jp:"め"},{en:"ear",jp:"みみ"},{en:"nose",jp:"はな"},{en:"mouth",jp:"くち"},{en:"hand",jp:"て"},{en:"foot",jp:"あし"},{en:"head",jp:"あたま"},{en:"arm",jp:"うで"},{en:"leg",jp:"あし（脚）"},{en:"finger",jp:"ゆび"}]},
+  {name:"色",minLv:1,words:[{en:"red",jp:"あか"},{en:"blue",jp:"あお"},{en:"green",jp:"みどり"},{en:"yellow",jp:"きいろ"},{en:"white",jp:"しろ"},{en:"black",jp:"くろ"},{en:"pink",jp:"ピンク"},{en:"orange",jp:"オレンジ"},{en:"purple",jp:"むらさき"},{en:"brown",jp:"ちゃいろ"}]},
+  {name:"数",minLv:11,words:[{en:"one",jp:"いち"},{en:"two",jp:"に"},{en:"three",jp:"さん"},{en:"four",jp:"よん"},{en:"five",jp:"ご"},{en:"six",jp:"ろく"},{en:"seven",jp:"なな"},{en:"eight",jp:"はち"},{en:"nine",jp:"きゅう"},{en:"ten",jp:"じゅう"}]},
+  {name:"食べ物",minLv:11,words:[{en:"rice",jp:"ごはん"},{en:"bread",jp:"パン"},{en:"milk",jp:"ぎゅうにゅう"},{en:"egg",jp:"たまご"},{en:"apple",jp:"りんご"},{en:"banana",jp:"バナナ"},{en:"cake",jp:"ケーキ"},{en:"juice",jp:"ジュース"},{en:"pizza",jp:"ピザ"},{en:"salad",jp:"サラダ"}]},
+  {name:"動物",minLv:21,words:[{en:"dog",jp:"いぬ"},{en:"cat",jp:"ねこ"},{en:"bird",jp:"とり"},{en:"fish",jp:"さかな"},{en:"rabbit",jp:"うさぎ"},{en:"horse",jp:"うま"},{en:"lion",jp:"ライオン"},{en:"tiger",jp:"とら"},{en:"bear",jp:"くま"},{en:"elephant",jp:"ぞう"}]},
+  {name:"学校",minLv:21,words:[{en:"book",jp:"ほん"},{en:"pen",jp:"ペン"},{en:"bag",jp:"かばん"},{en:"desk",jp:"つくえ"},{en:"chair",jp:"いす"},{en:"school",jp:"がっこう"},{en:"class",jp:"クラス"},{en:"teacher",jp:"せんせい"},{en:"friend",jp:"ともだち"},{en:"name",jp:"なまえ"}]},
+  {name:"天気",minLv:31,words:[{en:"sunny",jp:"はれ"},{en:"cloudy",jp:"くもり"},{en:"rainy",jp:"あめ"},{en:"snowy",jp:"ゆき"},{en:"windy",jp:"かぜがつよい"},{en:"hot",jp:"あつい"},{en:"cold",jp:"さむい"},{en:"warm",jp:"あたたかい"},{en:"cool",jp:"すずしい"},{en:"typhoon",jp:"たいふう"}]},
+  {name:"曜日",minLv:31,words:[{en:"Monday",jp:"げつようび"},{en:"Tuesday",jp:"かようび"},{en:"Wednesday",jp:"すいようび"},{en:"Thursday",jp:"もくようび"},{en:"Friday",jp:"きんようび"},{en:"Saturday",jp:"どようび"},{en:"Sunday",jp:"にちようび"},{en:"today",jp:"きょう"},{en:"tomorrow",jp:"あした"},{en:"yesterday",jp:"きのう"}]},
+  {name:"乗り物",minLv:41,words:[{en:"train",jp:"でんしゃ"},{en:"bus",jp:"バス"},{en:"car",jp:"くるま"},{en:"bike",jp:"じてんしゃ"},{en:"plane",jp:"ひこうき"},{en:"ship",jp:"ふね"},{en:"taxi",jp:"タクシー"},{en:"ambulance",jp:"きゅうきゅうしゃ"},{en:"helicopter",jp:"ヘリコプター"},{en:"rocket",jp:"ロケット"}]},
+  {name:"スポーツ",minLv:41,words:[{en:"soccer",jp:"サッカー"},{en:"baseball",jp:"やきゅう"},{en:"swimming",jp:"すいえい"},{en:"tennis",jp:"テニス"},{en:"basketball",jp:"バスケットボール"},{en:"volleyball",jp:"バレーボール"},{en:"running",jp:"ランニング"},{en:"skiing",jp:"スキー"},{en:"gymnastics",jp:"たいそう"},{en:"badminton",jp:"バドミントン"}]},
+  {name:"場所",minLv:51,words:[{en:"park",jp:"こうえん"},{en:"hospital",jp:"びょういん"},{en:"station",jp:"えき"},{en:"library",jp:"としょかん"},{en:"restaurant",jp:"レストラン"},{en:"store",jp:"おみせ"},{en:"zoo",jp:"どうぶつえん"},{en:"museum",jp:"はくぶつかん"},{en:"airport",jp:"くうこう"},{en:"hotel",jp:"ホテル"}]},
+  {name:"家",minLv:51,words:[{en:"kitchen",jp:"だいどころ"},{en:"bedroom",jp:"しんしつ"},{en:"bathroom",jp:"おふろ"},{en:"living room",jp:"リビング"},{en:"garden",jp:"にわ"},{en:"door",jp:"ドア"},{en:"window",jp:"まど"},{en:"table",jp:"テーブル"},{en:"sofa",jp:"ソファ"},{en:"stairs",jp:"かいだん"}]},
+  {name:"形容詞",minLv:61,words:[{en:"big",jp:"おおきい"},{en:"small",jp:"ちいさい"},{en:"long",jp:"ながい"},{en:"short",jp:"みじかい"},{en:"fast",jp:"はやい"},{en:"slow",jp:"おそい"},{en:"new",jp:"あたらしい"},{en:"old",jp:"ふるい"},{en:"strong",jp:"つよい"},{en:"weak",jp:"よわい"}]},
+  {name:"気持ち",minLv:61,words:[{en:"happy",jp:"うれしい"},{en:"sad",jp:"かなしい"},{en:"angry",jp:"おこった"},{en:"scared",jp:"こわい"},{en:"surprised",jp:"おどろいた"},{en:"tired",jp:"つかれた"},{en:"hungry",jp:"おなかすいた"},{en:"excited",jp:"わくわく"},{en:"lonely",jp:"さびしい"},{en:"proud",jp:"じまん"}]},
+  {name:"自然",minLv:71,words:[{en:"mountain",jp:"やま"},{en:"river",jp:"かわ"},{en:"sea",jp:"うみ"},{en:"forest",jp:"もり"},{en:"flower",jp:"はな（花）"},{en:"tree",jp:"き"},{en:"cloud",jp:"くも"},{en:"star",jp:"ほし"},{en:"moon",jp:"つき"},{en:"sun",jp:"たいよう"}]},
+  {name:"季節",minLv:71,words:[{en:"spring",jp:"はる"},{en:"summer",jp:"なつ"},{en:"autumn",jp:"あき"},{en:"winter",jp:"ふゆ"},{en:"rainbow",jp:"にじ"},{en:"earthquake",jp:"じしん"},{en:"volcano",jp:"かざん"},{en:"island",jp:"しま"},{en:"desert",jp:"さばく"},{en:"waterfall",jp:"たき"}]},
+  {name:"職業",minLv:81,words:[{en:"doctor",jp:"おいしゃさん"},{en:"nurse",jp:"かんごし"},{en:"police",jp:"けいかん"},{en:"firefighter",jp:"しょうぼうし"},{en:"cook",jp:"りょうりにん"},{en:"farmer",jp:"のうか"},{en:"singer",jp:"かしゅ"},{en:"athlete",jp:"せんしゅ"},{en:"scientist",jp:"かがくしゃ"},{en:"astronaut",jp:"うちゅうひこうし"}]},
+  {name:"家族",minLv:81,words:[{en:"father",jp:"おとうさん"},{en:"mother",jp:"おかあさん"},{en:"brother",jp:"おにいさん"},{en:"sister",jp:"おねえさん"},{en:"grandfather",jp:"おじいさん"},{en:"grandmother",jp:"おばあさん"},{en:"uncle",jp:"おじさん"},{en:"aunt",jp:"おばさん"},{en:"baby",jp:"あかちゃん"},{en:"family",jp:"かぞく"}]},
+  {name:"時間",minLv:91,words:[{en:"morning",jp:"あさ"},{en:"afternoon",jp:"ひる"},{en:"evening",jp:"ゆうがた"},{en:"night",jp:"よる"},{en:"hour",jp:"じかん"},{en:"minute",jp:"ふん"},{en:"week",jp:"しゅう"},{en:"month",jp:"つき"},{en:"year",jp:"とし"},{en:"birthday",jp:"たんじょうび"}]},
+  {name:"あいさつ",minLv:91,words:[{en:"hello",jp:"こんにちは"},{en:"goodbye",jp:"さようなら"},{en:"thank you",jp:"ありがとう"},{en:"sorry",jp:"ごめんなさい"},{en:"please",jp:"おねがい"},{en:"yes",jp:"はい"},{en:"no",jp:"いいえ"},{en:"help",jp:"たすけて"},{en:"welcome",jp:"ようこそ"},{en:"good luck",jp:"がんばれ"}]},
 ];
 
-// ══════════════════════════════════════════
-//  WAZA DEFINITIONS
-// ══════════════════════════════════════════
-const WAZA_LIST = [
-  { id:"normal",   name:"ノーマル",   icon:"⚔️",  unlockLv:1,
-    desc:"ふつうのこうげき",      damage:20, timeLimit:15, special:null },
-  { id:"shield",   name:"バリア",     icon:"🛡️",  unlockLv:20,
-    desc:"ダメージを半分にする",  damage:20, timeLimit:15, special:"shield" },
-  { id:"speed",    name:"スピード",   icon:"⚡",  unlockLv:40,
-    desc:"じかんが5びょうに！",   damage:25, timeLimit:5,  special:null },
-  { id:"gamble",   name:"ギャンブル", icon:"🎲",  unlockLv:60,
-    desc:"正解→0 不正解→2倍",    damage:40, timeLimit:15, special:"gamble" },
-  { id:"finisher", name:"ひっさつ",   icon:"💥",  unlockLv:80,
-    desc:"大ダメ！外れたら自分",  damage:50, timeLimit:15, special:"finisher" },
+// ═══════════════════════════
+//  WAZA
+// ═══════════════════════════
+const WAZA=[
+  {id:"normal", name:"ノーマル", icon:"⚔️",unlockLv:1, desc:"ふつうのこうげき",  dmg:20},
+  {id:"attack", name:"アタック", icon:"💥",unlockLv:20,desc:"ダメージ2ばい！",   dmg:40},
+  {id:"barrier",name:"バリア",   icon:"🛡️",unlockLv:40,desc:"うけるダメージ半分",dmg:20},
+  {id:"speed",  name:"スピード", icon:"⚡",unlockLv:60,desc:"タイマー+5びょう",  dmg:20},
+  {id:"gamble", name:"ギャンブル",icon:"🎲",unlockLv:80,desc:"かち→3倍 まけ→2倍",dmg:60},
 ];
 
-// ══════════════════════════════════════════
-//  PIXEL DRAWING
-// ══════════════════════════════════════════
+// ═══════════════════════════
+//  PIXEL ART
+// ═══════════════════════════
 function px(ctx,x,y,c,s){ctx.fillStyle=c;ctx.fillRect(x*s,y*s,s,s);}
 
-function drawEgg(c){
-  const ctx=c.getContext('2d'),s=c.width/24;ctx.clearRect(0,0,c.width,c.height);
-  [[8,4],[9,3],[10,3],[11,3],[12,3],[13,4],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],
-   [7,5],[14,5],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],
-   [7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],
-   [7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-   [7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],
-   [8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[9,11],[10,11],[11,11],[12,11],
-  ].forEach(([x,y])=>px(ctx,x,y,"#f5e6c8",s));
-  [[8,4],[9,3],[10,3],[11,3],[12,3],[13,4],[7,5],[7,6],[7,7],[7,8],[7,9]].forEach(([x,y])=>px(ctx,x,y,"#c8a87a",s));
-  px(ctx,10,7,"#3a2a1a",s);px(ctx,13,7,"#3a2a1a",s);
-  px(ctx,11,9,"#e08080",s);px(ctx,12,9,"#e08080",s);
-}
-function drawChick(c){
-  const ctx=c.getContext('2d'),s=c.width/24;ctx.clearRect(0,0,c.width,c.height);
-  [[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-   [7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],
-   [7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],
-   [7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],
-   [8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],
-   [9,5],[10,5],[11,5],[12,5],[13,5],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],
-   [8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],
-   [10,4],[11,4],[12,4],[11,3],
-  ].forEach(([x,y])=>px(ctx,x,y,"#f5d020",s));
-  px(ctx,11,7,"#e8820c",s);px(ctx,12,7,"#e8820c",s);
-  px(ctx,9,6,"#2a1a0a",s);px(ctx,13,6,"#2a1a0a",s);
-  [[6,9],[6,10],[6,11]].forEach(([x,y])=>px(ctx,x,y,"#e8b800",s));
-  [[9,13],[9,14],[10,13],[12,13],[12,14],[13,13]].forEach(([x,y])=>px(ctx,x,y,"#e8820c",s));
-}
-function drawChibi(c){
-  const ctx=c.getContext('2d'),s=c.width/24;ctx.clearRect(0,0,c.width,c.height);
-  [[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],
-   [7,4],[8,4],[15,4],[16,4],[7,5],[16,5]].forEach(([x,y])=>px(ctx,x,y,"#4a3520",s));
-  [[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],
-   [8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],
-   [8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],
-   [8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8]].forEach(([x,y])=>px(ctx,x,y,"#fad9a1",s));
-  px(ctx,10,6,"#2a1a0a",s);px(ctx,13,6,"#2a1a0a",s);
-  px(ctx,9,8,"#f4a0a0",s);px(ctx,14,8,"#f4a0a0",s);
-  [[10,8],[11,8],[12,8]].forEach(([x,y])=>px(ctx,x,y,"#d07080",s));
-  [[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],
-   [7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],
-   [7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],
-   [8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12]].forEach(([x,y])=>px(ctx,x,y,"#4ecca3",s));
-  [[6,9],[6,10],[6,11],[17,9],[17,10],[17,11]].forEach(([x,y])=>px(ctx,x,y,"#fad9a1",s));
-  [[9,13],[10,13],[9,14],[10,14],[13,13],[14,13],[13,14],[14,14]].forEach(([x,y])=>px(ctx,x,y,"#5566aa",s));
-}
-function drawMage(c){
-  const ctx=c.getContext('2d'),s=c.width/24;ctx.clearRect(0,0,c.width,c.height);
-  [[11,1],[12,1],[13,1],[10,2],[11,2],[12,2],[13,2],[14,2],
-   [9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],
-   [8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[14,4],[15,4],[16,4]].forEach(([x,y])=>px(ctx,x,y,"#6c3483",s));
-  px(ctx,12,2,"#f5d020",s);
-  [[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],
-   [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],
-   [9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],
-   [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8]].forEach(([x,y])=>px(ctx,x,y,"#fad9a1",s));
-  px(ctx,10,6,"#2a1a0a",s);px(ctx,14,6,"#2a1a0a",s);
-  px(ctx,10,8,"#f4a0a0",s);px(ctx,14,8,"#f4a0a0",s);
-  [[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[17,9],
-   [7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[17,10],
-   [7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],
-   [7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12]].forEach(([x,y])=>px(ctx,x,y,"#9b59b6",s));
-  [[18,7],[18,8],[18,9],[18,10],[18,11],[18,12],[18,13]].forEach(([x,y])=>px(ctx,x,y,"#8B6914",s));
-  [[17,6],[18,6],[19,6],[18,5]].forEach(([x,y])=>px(ctx,x,y,"#f5d020",s));
-  [[9,13],[10,13],[9,14],[10,14],[14,13],[15,13],[14,14],[15,14]].forEach(([x,y])=>px(ctx,x,y,"#7d3c98",s));
-}
-function drawHakase(c){
-  const ctx=c.getContext('2d'),s=c.width/24;ctx.clearRect(0,0,c.width,c.height);
-  [[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],
-   [7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[15,4],[16,4]].forEach(([x,y])=>px(ctx,x,y,"#f5d020",s));
-  [[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],
-   [8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],
-   [8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],
-   [8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8]].forEach(([x,y])=>px(ctx,x,y,"#fad9a1",s));
-  [[9,6],[10,6],[11,6],[12,6],[13,6],[14,6]].forEach(([x,y])=>px(ctx,x,y,"#88ccff",s));
-  px(ctx,9,6,"#2a1a0a",s);px(ctx,14,6,"#2a1a0a",s);px(ctx,12,8,"#d07080",s);
-  [[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],
-   [7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],
-   [7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],
-   [7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12]].forEach(([x,y])=>px(ctx,x,y,"#f0f0f0",s));
-  px(ctx,8,10,"#e94560",s);px(ctx,8,11,"#e94560",s);
-  [[17,9],[17,10],[17,11],[17,12],[18,9],[18,10],[18,11],[18,12]].forEach(([x,y])=>px(ctx,x,y,"#f5d020",s));
-  [[9,13],[10,13],[9,14],[10,14],[13,13],[14,13],[13,14],[14,14]].forEach(([x,y])=>px(ctx,x,y,"#5566aa",s));
+// LV1-20: ヒヨコ
+function drawHiyoko(cv){
+  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
+  [[9,6],[10,6],[11,6],[12,6],[13,6],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[9,9],[10,9],[11,9],[12,9],[13,9]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  [[11,4],[12,4],[11,5],[12,5],[13,5]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  [[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  px(c,11,8,'#e8820c',s);px(c,12,8,'#e8820c',s);
+  px(c,10,7,'#1a0a00',s);px(c,13,7,'#1a0a00',s);
+  px(c,10,7,'#1a0a00',s);px(c,13,7,'#1a0a00',s);
+  [[6,11],[6,12],[6,13]].forEach(([x,y])=>px(c,x,y,'#e8b800',s));
+  [[16,11],[16,12],[16,13]].forEach(([x,y])=>px(c,x,y,'#e8b800',s));
+  px(c,9,9,'#f4a0a0',s);px(c,14,9,'#f4a0a0',s);
+  [[9,15],[10,15],[11,15],[12,15],[13,15],[9,16],[13,16]].forEach(([x,y])=>px(c,x,y,'#e8820c',s));
 }
 
-const DRAW_FNS = [drawEgg, drawChick, drawChibi, drawMage, drawHakase];
-function drawForLv(canvas, lv) {
-  const idx = lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4;
-  DRAW_FNS[idx](canvas);
-}
-function stageNameForLv(lv) {
-  return lv<=20?"たまご":lv<=40?"ひよっこ":lv<=60?"ちびぽこ":lv<=80?"まほうつかい":"えいごはかせ";
-}
-
-// ══════════════════════════════════════════
-//  GAME STATE
-// ══════════════════════════════════════════
-let db = null;
-let roomId = null;
-let mySlot = null; // 'p1' | 'p2'
-let myName = '';
-let roomRef = null;
-let unsubscribes = [];
-
-const MAX_HP = 100;
-let state = {
-  p1: { name:'', hp:MAX_HP, lv:1, exp:0, shield:false },
-  p2: { name:'', hp:MAX_HP, lv:1, exp:0, shield:false },
-  turn: 'p1',      // whose attack turn
-  phase: 'attack', // 'attack' | 'question' | 'result'
-  currentQ: null,  // { word, answer, waza, choices }
-  winner: null,
-};
-
-let timerInterval = null;
-let timerLeft = 15;
-
-// ══════════════════════════════════════════
-//  FIREBASE INIT
-// ══════════════════════════════════════════
-function initFirebase() {
-  const url = document.getElementById('inputFbUrl').value.trim();
-  const apiKey = document.getElementById('inputFbApiKey').value.trim();
-  if (!url || !apiKey) return false;
-  try {
-    if (firebase.apps.length === 0) {
-      firebase.initializeApp({
-        apiKey,
-        databaseURL: url,
-      });
-    }
-    db = firebase.database();
-    return true;
-  } catch(e) {
-    console.error(e);
-    return false;
-  }
+// LV21-40: ウサギ
+function drawUsagi(cv){
+  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
+  [[10,2],[11,2],[10,3],[11,3],[10,4],[11,4],[10,5],[11,5],[13,2],[14,2],[13,3],[14,3],[13,4],[14,4],[13,5],[14,5]].forEach(([x,y])=>px(c,x,y,'#f0e0ff',s));
+  [[10,3],[11,3],[10,4],[11,4],[13,3],[14,3],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f4a0c0',s));
+  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9]].forEach(([x,y])=>px(c,x,y,'#f5f0ff',s));
+  px(c,10,7,'#3a0a5a',s);px(c,14,7,'#3a0a5a',s);
+  px(c,12,9,'#f4a0c0',s);
+  [[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[15,14]].forEach(([x,y])=>px(c,x,y,'#f5f0ff',s));
+  [[10,12],[11,12],[12,12],[13,12],[10,13],[11,13],[12,13],[13,13]].forEach(([x,y])=>px(c,x,y,'#ffe0f0',s));
+  [[9,15],[10,15],[11,15],[13,15],[14,15],[15,15],[9,16],[10,16],[13,16],[14,16]].forEach(([x,y])=>px(c,x,y,'#f5f0ff',s));
+  px(c,17,12,'#fff',s);px(c,17,13,'#fff',s);
 }
 
-// ══════════════════════════════════════════
-//  ROOM MANAGEMENT
-// ══════════════════════════════════════════
-function genCode() {
-  return String(Math.floor(1000 + Math.random() * 9000));
+// LV41-60: キツネ
+function drawKitsune(cv){
+  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
+  [[9,3],[10,3],[9,4],[10,4],[9,5],[10,5],[13,3],[14,3],[13,4],[14,4],[13,5],[14,5]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
+  [[9,4],[10,4],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f4a0a0',s));
+  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
+  [[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[10,9],[11,9],[12,9],[13,9]].forEach(([x,y])=>px(c,x,y,'#f5e0c0',s));
+  px(c,9,7,'#2a1000',s);px(c,15,7,'#2a1000',s);
+  px(c,12,9,'#a03010',s);
+  [[6,8],[7,8],[17,8],[18,8]].forEach(([x,y])=>px(c,x,y,'#c05010',s));
+  [[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
+  [[10,11],[11,11],[12,11],[13,11],[10,12],[11,12],[12,12],[13,12]].forEach(([x,y])=>px(c,x,y,'#f5e0c0',s));
+  [[17,10],[18,10],[19,10],[17,11],[18,11],[19,11],[17,12],[18,12],[19,12],[18,13],[19,13]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
+  [[18,10],[19,10],[18,11],[19,11],[19,12]].forEach(([x,y])=>px(c,x,y,'#fff',s));
+  [[8,14],[9,14],[14,14],[15,14],[8,15],[9,15],[14,15],[15,15]].forEach(([x,y])=>px(c,x,y,'#c05010',s));
 }
 
-async function createRoom() {
-  const name = document.getElementById('inputName').value.trim();
-  if (!name) { setMsg('screenTitle','なまえをいれてね！','error'); return; }
-  if (!initFirebase()) { setMsg('screenTitle','FirebaseのURLとAPIKeyをいれてね！','error'); return; }
-  myName = name;
-  mySlot = 'p1';
-  roomId = genCode();
-  document.getElementById('displayRoomCode').textContent = roomId;
-  roomRef = db.ref('rooms/' + roomId);
-  await roomRef.set({
-    p1: { name, hp:MAX_HP, lv:1, exp:0, shield:false },
-    p2: { name:'', hp:MAX_HP, lv:1, exp:0, shield:false },
-    turn: 'p1', phase: 'waiting', currentQ: null, winner: null,
-    createdAt: Date.now(),
-  });
+// LV61-80: オオカミ
+function drawOokami(cv){
+  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
+  [[8,3],[9,3],[8,4],[9,4],[8,5],[9,5],[14,3],[15,3],[13,4],[14,4],[15,4],[14,5],[15,5]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
+  [[9,4],[9,5],[14,4],[14,5]].forEach(([x,y])=>px(c,x,y,'#f4a0a0',s));
+  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
+  [[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10]].forEach(([x,y])=>px(c,x,y,'#b8c0d8',s));
+  px(c,9,7,'#1a2030',s);px(c,15,7,'#1a2030',s);
+  px(c,9,8,'#3050ff',s);px(c,15,8,'#3050ff',s);
+  px(c,11,10,'#303050',s);px(c,12,10,'#303050',s);
+  px(c,16,7,'#e86060',s);px(c,17,8,'#e86060',s);
+  [[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],[5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12],[5,13],[6,13],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13],[17,13],[18,13],[6,14],[7,14],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[15,14],[16,14],[17,14]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
+  [[10,12],[11,12],[12,12],[13,12],[10,13],[11,13],[12,13],[13,13]].forEach(([x,y])=>px(c,x,y,'#b8c0d8',s));
+  [[18,11],[19,11],[20,11],[18,12],[19,12],[20,12],[18,13],[19,13],[20,13],[19,14],[20,14]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
+  [[20,11],[20,12],[20,13]].forEach(([x,y])=>px(c,x,y,'#b8c0d8',s));
+  [[7,15],[8,15],[14,15],[15,15],[7,16],[8,16],[14,16],[15,16]].forEach(([x,y])=>px(c,x,y,'#606880',s));
+}
+
+// LV81-100: えいごりゅう
+function drawDragon(cv){
+  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
+  [[3,8],[4,8],[5,8],[3,9],[4,9],[5,9],[6,9],[3,10],[4,10],[5,10],[6,10],[7,10]].forEach(([x,y])=>px(c,x,y,'#40b888',s));
+  [[18,8],[19,8],[20,8],[17,9],[18,9],[19,9],[20,9],[16,10],[17,10],[18,10],[19,10],[20,10]].forEach(([x,y])=>px(c,x,y,'#40b888',s));
+  [[3,8],[4,8],[3,9],[4,9]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
+  [[19,8],[20,8],[19,9],[20,9]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
+  [[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
+  [[10,11],[11,11],[12,11],[13,11],[10,12],[11,12],[12,12],[13,12],[11,13],[12,13]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
+  [[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[16,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
+  [[9,3],[10,3],[9,4],[10,4],[13,3],[14,3],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  [[10,6],[11,6],[13,6],[14,6]].forEach(([x,y])=>px(c,x,y,'#fff',s));
+  px(c,10,7,'#1030a0',s);px(c,13,7,'#1030a0',s);
+  px(c,11,6,'#80a0ff',s);px(c,14,6,'#80a0ff',s);
+  [[10,8],[11,8],[12,8],[13,8]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
+  px(c,12,8,'#fff',s);
+  [[8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[14,4],[15,4],[16,4],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[12,2]].forEach(([x,y])=>px(c,x,y,'#1a1a1a',s));
+  [[15,4],[16,4],[16,5]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  [[15,13],[16,13],[15,14],[16,14],[17,14],[16,15],[17,15]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
+  [[17,13],[17,14],[18,14]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
+  [[9,14],[10,14],[13,14],[14,14],[9,15],[10,15],[13,15],[14,15]].forEach(([x,y])=>px(c,x,y,'#1e8050',s));
+}
+
+const DRAW_FNS=[drawHiyoko,drawUsagi,drawKitsune,drawOokami,drawDragon];
+const STAGE_NAMES=['ヒヨコ','ウサギ','キツネ','オオカミ','えいごりゅう'];
+function drawForLv(cv,lv){DRAW_FNS[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4](cv);}
+function stageForLv(lv){return STAGE_NAMES[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4];}
+
+// ═══════════════════════════
+//  STATE
+// ═══════════════════════════
+let db=null,roomId=null,mySlot=null,myName='',roomRef=null;
+let listeners=[];
+const MAX_HP=100;
+let state={p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null};
+let timerIv=null,wazaIv=null;
+let myWazaDone=false,answerBusy=false,roundOwner=false;
+
+// ═══════════════════════════
+//  FIREBASE
+// ═══════════════════════════
+function initFb(){
+  const url=document.getElementById('inputFbUrl').value.trim();
+  const key=document.getElementById('inputFbApiKey').value.trim();
+  if(!url||!key)return false;
+  try{if(!firebase.apps.length)firebase.initializeApp({apiKey:key,databaseURL:url});db=firebase.database();return true;}
+  catch(e){console.error(e);return false;}
+}
+function genCode(){return String(Math.floor(1000+Math.random()*9000));}
+
+// ═══════════════════════════
+//  ROOM
+// ═══════════════════════════
+async function createRoom(){
+  const name=document.getElementById('inputName').value.trim();
+  if(!name)return setMsg('Title','なまえをいれてね！','error');
+  if(!initFb())return setMsg('Title','FirebaseのURLとAPIKeyをいれてね！','error');
+  myName=name;mySlot='p1';roomId=genCode();
+  document.getElementById('displayRoomCode').textContent=roomId;
+  roomRef=db.ref('rooms/'+roomId);
+  await roomRef.set({p1:{name,hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,createdAt:Date.now()});
   showScreen('screenWaiting');
-  // wait for p2
-  roomRef.on('value', snap => {
-    const d = snap.val();
-    if (!d) return;
-    if (d.p2 && d.p2.name && d.phase === 'attack') {
-      roomRef.off('value');
-      state = { p1:d.p1, p2:d.p2, turn:d.turn, phase:d.phase, currentQ:d.currentQ, winner:d.winner };
-      startBattle();
-    }
+  roomRef.on('value',snap=>{
+    const d=snap.val();
+    if(d&&d.p2&&d.p2.name&&d.phase==='waza'){roomRef.off('value');state=d;startBattle();}
   });
 }
 
-async function joinRoom() {
-  const name = document.getElementById('inputName').value.trim() || document.getElementById('inputName').value;
-  const nameFromTitle = document.getElementById('inputName').value.trim();
-  const code = document.getElementById('inputRoomCode').value.trim();
-  if (!nameFromTitle) { setMsg('screenJoin','なまえをいれてね！','error'); return; }
-  if (code.length !== 4) { setMsg('screenJoin','4けたのコードをいれてね','error'); return; }
-  if (!db) { if (!initFirebase()) { setMsg('screenJoin','FirebaseのURLとAPIKeyをいれてね！','error'); return; } }
-  myName = nameFromTitle;
-  mySlot = 'p2';
-  roomId = code;
-  roomRef = db.ref('rooms/' + roomId);
-  const snap = await roomRef.once('value');
-  const d = snap.val();
-  if (!d) { setMsg('screenJoin','そのへやはないよ','error'); return; }
-  if (d.p2 && d.p2.name) { setMsg('screenJoin','そのへやはもういっぱいだよ','error'); return; }
-  await roomRef.update({
-    'p2/name': myName,
-    phase: 'attack',
-  });
-  const snap2 = await roomRef.once('value');
-  const d2 = snap2.val();
-  state = { p1:d2.p1, p2:d2.p2, turn:'p1', phase:'attack', currentQ:null, winner:null };
-  state.p2.name = myName;
+async function joinRoom(){
+  const name=document.getElementById('inputName').value.trim();
+  const code=document.getElementById('inputRoomCode').value.trim();
+  if(!name)return setMsg('Join','なまえをいれてね！','error');
+  if(code.length!==4)return setMsg('Join','4けたのコードをいれてね','error');
+  if(!db&&!initFb())return setMsg('Join','FirebaseのURLとAPIKeyをいれてね！','error');
+  myName=name;mySlot='p2';roomId=code;
+  roomRef=db.ref('rooms/'+roomId);
+  const snap=await roomRef.once('value');const d=snap.val();
+  if(!d)return setMsg('Join','そのへやはないよ','error');
+  if(d.p2&&d.p2.name)return setMsg('Join','そのへやはもういっぱいだよ','error');
+  await roomRef.update({'p2/name':name,phase:'waza'});
+  const s2=await roomRef.once('value');state=s2.val();
   startBattle();
 }
 
-async function cancelRoom() {
-  if (roomRef) await roomRef.remove();
-  roomRef = null;
-  showScreen('screenTitle');
-}
+async function cancelRoom(){if(roomRef)await roomRef.remove();showScreen('screenTitle');}
 
-function showJoin() {
-  const name = document.getElementById('inputName').value.trim();
-  if (!name) { setMsg('screenTitle','なまえをいれてね！','error'); return; }
-  if (!initFirebase()) { setMsg('screenTitle','FirebaseのURLとAPIKeyをいれてね！','error'); return; }
+function showJoin(){
+  const name=document.getElementById('inputName').value.trim();
+  if(!name)return setMsg('Title','なまえをいれてね！','error');
+  if(!initFb())return setMsg('Title','FirebaseのURLとAPIKeyをいれてね！','error');
   showScreen('screenJoin');
 }
 
-// ══════════════════════════════════════════
-//  BATTLE CORE
-// ══════════════════════════════════════════
-function startBattle() {
+// ═══════════════════════════
+//  BATTLE
+// ═══════════════════════════
+function myS(){return state[mySlot];}
+function enSlot(){return mySlot==='p1'?'p2':'p1';}
+function enS(){return state[enSlot()];}
+function isTurn(){return state.turn===mySlot;}
+
+function startBattle(){
   showScreen('screenBattle');
-  updateBattleUI();
+  updateUI();
   listenRoom();
-  if (isMyTurn()) {
-    showAttackPhase();
+  startWazaPhase();
+  log('バトルかいし！ さきにせいかいしたほうのかち！🔥');
+}
+
+function listenRoom(){
+  listeners.forEach(f=>f());listeners=[];
+  const h=roomRef.on('value',snap=>{
+    const d=snap.val();if(!d)return;
+    const prev=state.phase;
+    state=d;
+    updateUI();
+    if(d.winner){endBattle(d.winner);return;}
+    if(d.phase==='waza'&&prev!=='waza')startWazaPhase();
+    if(d.phase==='question'&&prev!=='question')showQuestion(d.question);
+    if(d.phase==='roundEnd'&&prev!=='roundEnd')onRoundEnd(d.roundResult);
+    // 相手がわざを選んだら → ターンプレイヤーが問題を生成
+    if(d.phase==='waza'&&myWazaDone&&d.waza&&d.waza[enSlot()]&&isTurn())tryGenQuestion();
+  });
+  listeners.push(()=>roomRef.off('value',h));
+}
+
+// ─── WAZA PHASE ───
+function startWazaPhase(){
+  myWazaDone=false;answerBusy=false;roundOwner=false;
+  clearInterval(timerIv);clearInterval(wazaIv);
+  hidePhases();
+  document.getElementById('phaseWaza').style.display='';
+  renderWaza();
+  let cnt=5;document.getElementById('wazaCountdown').textContent=cnt;
+  wazaIv=setInterval(()=>{
+    cnt--;
+    document.getElementById('wazaCountdown').textContent=cnt;
+    if(cnt<=0){clearInterval(wazaIv);if(!myWazaDone)pickWaza('normal');}
+  },1000);
+}
+
+function renderWaza(){
+  const g=document.getElementById('wazaGrid');g.innerHTML='';
+  const lv=myS().lv;
+  WAZA.forEach(w=>{
+    const locked=lv<w.unlockLv;
+    const b=document.createElement('button');
+    b.className='waza-btn'+(locked?' locked':'');
+    b.disabled=locked;
+    b.innerHTML=`<span class="w-icon">${w.icon}</span><span class="w-name">${w.name}</span><span class="w-desc">${locked?`LV${w.unlockLv}でかいほう`:w.desc}</span>`;
+    if(!locked)b.onclick=()=>pickWaza(w.id);
+    g.appendChild(b);
+  });
+}
+
+async function pickWaza(wid){
+  if(myWazaDone)return;
+  myWazaDone=true;clearInterval(wazaIv);
+  document.querySelectorAll('.waza-btn').forEach(b=>b.disabled=true);
+  const idx=WAZA.findIndex(w=>w.id===wid);
+  if(idx>=0)document.querySelectorAll('.waza-btn')[idx]?.classList.add('selected');
+  const w=WAZA.find(x=>x.id===wid)||WAZA[0];
+  log(`${myName}は ${w.icon}${w.name} をえらんだ！`);
+  await roomRef.update({[`waza/${mySlot}`]:wid});
+  // 相手がすでに選んでいれば問題を生成（ターンプレイヤーのみ）
+  const snap=await roomRef.once('value');const d=snap.val();
+  if(d.waza&&d.waza[enSlot()]&&isTurn()){
+    tryGenQuestion();
   } else {
-    showWaitPhase();
+    hidePhases();
+    document.getElementById('phaseWait').style.display='';
+    log('あいてのわざせんたくをまっているよ…');
   }
-  addLog('バトルかいし！🔥', 'log-system');
 }
 
-function listenRoom() {
-  unsubscribes.forEach(f => f());
-  unsubscribes = [];
-  const handler = roomRef.on('value', snap => {
-    const d = snap.val();
-    if (!d) return;
-    const prevPhase = state.phase;
-    const prevTurn  = state.turn;
-    state = { ...d };
+async function tryGenQuestion(){
+  const snap=await roomRef.once('value');const d=snap.val();
+  if(d.phase!=='waza')return;
+  if(!d.waza||!d.waza.p1||!d.waza.p2)return;
+  const q=makeQ();
+  await roomRef.update({phase:'question',question:q,roundResult:null});
+}
 
-    updateBattleUI();
+function makeQ(){
+  const lv=Math.max(myS().lv,enS().lv);
+  let pool=[];
+  CATEGORIES.forEach(cat=>{if(lv>=cat.minLv)pool=pool.concat(cat.words);});
+  if(!pool.length)pool=CATEGORIES[0].words;
+  const word=pool[Math.floor(Math.random()*pool.length)];
+  const all=[];CATEGORIES.forEach(cat=>all.push(...cat.words));
+  const wrongs=all.filter(w=>w.jp!==word.jp).sort(()=>Math.random()-.5).slice(0,3).map(w=>w.jp);
+  return{en:word.en,answer:word.jp,choices:[...wrongs,word.jp].sort(()=>Math.random()-.5),startedAt:Date.now()};
+}
 
-    if (d.winner) {
-      endBattle(d.winner);
-      return;
-    }
-
-    // phase changed → re-render
-    if (d.phase === 'question' && !isMyTurn()) {
-      // I'm the attacker waiting → ignore question phase
-    }
-    if (d.phase === 'question' && isMyTurn() && prevPhase === 'attack') {
-      // I just sent a question but now it's question phase — shouldn't happen
-    }
-    if (d.phase === 'question' && !isMyTurn()) {
-      showQuestionPhase(d.currentQ);
-    }
-    if (d.phase === 'attack') {
-      if (isMyTurn()) {
-        showAttackPhase();
-      } else {
-        showWaitPhase();
-      }
-    }
+// ─── QUESTION PHASE ───
+function showQuestion(q){
+  if(!q)return;
+  clearInterval(timerIv);
+  hidePhases();
+  document.getElementById('phaseQuestion').style.display='';
+  document.getElementById('qWord').textContent=q.en;
+  const mw=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
+  const ew=WAZA.find(x=>x.id===state.waza[enSlot()])||WAZA[0];
+  document.getElementById('qWazaRow').textContent=`あなた: ${mw.icon}${mw.name}  あいて: ${ew.icon}${ew.name}`;
+  // choices
+  const g=document.getElementById('choicesGrid');g.innerHTML='';
+  q.choices.forEach(ch=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';b.textContent=ch;
+    b.onclick=()=>onAnswer(ch,q);
+    g.appendChild(b);
   });
-  unsubscribes.push(() => roomRef.off('value', handler));
+  // timer (speed waza → +5s)
+  const mw2=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
+  const totalTime=mw2.id==='speed'?20:15;
+  let left=totalTime;
+  const fill=document.getElementById('timerFill');
+  fill.style.width='100%';fill.style.background='var(--green)';
+  timerIv=setInterval(()=>{
+    left-=0.1;
+    const pct=Math.max(0,(left/totalTime)*100);
+    fill.style.width=pct+'%';
+    if(pct<25)fill.style.background='var(--red)';
+    else if(pct<55)fill.style.background='var(--gold)';
+    if(left<=0){clearInterval(timerIv);onTimeout(q);}
+  },100);
+  answerBusy=false;
 }
 
-function isMyTurn() {
-  return state.turn === mySlot;
-}
-function myState()    { return state[mySlot]; }
-function enemySlot()  { return mySlot === 'p1' ? 'p2' : 'p1'; }
-function enemyState() { return state[enemySlot()]; }
-
-// ── ATTACK PHASE ──
-function showAttackPhase() {
-  hideAllPhases();
-  document.getElementById('phaseAttack').style.display = '';
-  document.getElementById('turnIndicator').textContent = 'あなたのターン⚔️';
-  renderWazaGrid();
-}
-
-function renderWazaGrid() {
-  const grid = document.getElementById('wazaGrid');
-  grid.innerHTML = '';
-  const myLv = myState().lv;
-  WAZA_LIST.forEach(w => {
-    const btn = document.createElement('button');
-    btn.className = 'waza-btn' + (myLv < w.unlockLv ? ' locked' : '');
-    btn.disabled = myLv < w.unlockLv;
-    btn.innerHTML = `
-      <span class="waza-icon">${w.icon}</span>
-      <span class="waza-name">${w.name}</span>
-      <span class="waza-desc">${myLv < w.unlockLv ? `LV${w.unlockLv}でかいほう` : w.desc}</span>
-    `;
-    if (myLv >= w.unlockLv) {
-      btn.onclick = () => useWaza(w);
-    }
-    grid.appendChild(btn);
-  });
-}
-
-function getAvailableWords() {
-  const lv = myState().lv;
-  let pool = [];
-  CATEGORIES.forEach(c => {
-    if (lv >= c.minLv) pool = pool.concat(c.words);
-  });
-  return pool;
-}
-
-function useWaza(waza) {
-  const pool = getAvailableWords();
-  const word = pool[Math.floor(Math.random() * pool.length)];
-  // generate wrong choices
-  const allWords = [];
-  CATEGORIES.forEach(c => allWords.push(...c.words));
-  const wrongs = allWords.filter(w => w.jp !== word.jp)
-    .sort(() => Math.random()-0.5).slice(0,3).map(w=>w.jp);
-  const choices = [...wrongs, word.jp].sort(() => Math.random()-0.5);
-
-  const q = {
-    en: word.en,
-    answer: word.jp,
-    choices,
-    waza: waza.id,
-    damage: waza.damage,
-    timeLimit: waza.timeLimit,
-    special: waza.special,
-  };
-
-  roomRef.update({
-    currentQ: q,
-    phase: 'question',
-  });
-  addLog(`${myName}の${waza.icon}${waza.name}！`, 'log-hit');
-  hideAllPhases();
-  showWaitPhase();
-  document.getElementById('turnIndicator').textContent = 'あいてがこたえてる…';
-}
-
-// ── QUESTION PHASE (defender answers) ──
-function showQuestionPhase(q) {
-  if (!q) return;
-  clearTimer();
-  hideAllPhases();
-  document.getElementById('phaseQuestion').style.display = '';
-  document.getElementById('turnIndicator').textContent = 'あいてのターン🛡️';
-  document.getElementById('qWord').textContent = q.en;
-
-  const waza = WAZA_LIST.find(w => w.id === q.waza) || WAZA_LIST[0];
-  document.getElementById('qPhaseTitle').textContent =
-    `${waza.icon}${waza.name}でこうげきされた！こたえよう！`;
-
-  // render choices
-  const grid = document.getElementById('choicesGrid');
-  grid.innerHTML = '';
-  q.choices.forEach(ch => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = ch;
-    btn.onclick = () => answerQuestion(ch, q);
-    grid.appendChild(btn);
+async function onAnswer(chosen,q){
+  if(answerBusy)return;
+  const correct=chosen===q.answer;
+  // visual
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    if(b.textContent===q.answer)b.classList.add('correct');
+    else if(b.textContent===chosen&&!correct)b.classList.add('wrong');
+    else b.classList.add('dimmed');
   });
 
-  // timer
-  timerLeft = q.timeLimit || 15;
-  const bar = document.getElementById('timerBar');
-  bar.style.width = '100%';
-  bar.style.background = 'var(--green)';
-  timerInterval = setInterval(() => {
-    timerLeft--;
-    const pct = (timerLeft / (q.timeLimit||15)) * 100;
-    bar.style.width = pct + '%';
-    if (pct < 30) bar.style.background = 'var(--accent)';
-    else if (pct < 60) bar.style.background = 'var(--gold)';
-    if (timerLeft <= 0) {
-      clearTimer();
-      answerQuestion('__timeout__', q);
-    }
-  }, 1000);
-}
-
-async function answerQuestion(chosen, q) {
-  clearTimer();
-  // disable all choice buttons
-  document.querySelectorAll('.choice-btn').forEach(b => {
-    b.disabled = true;
-    if (b.textContent === q.answer) b.classList.add('correct');
-    else if (b.textContent === chosen) b.classList.add('wrong');
-  });
-
-  const correct = chosen === q.answer;
-  let dmg = q.damage;
-  let applyToMe = !correct; // if I'm wrong → I take damage
-
-  // special rules
-  if (q.special === 'gamble') {
-    if (correct) { dmg = 0; applyToMe = false; }
-    else { dmg = q.damage * 2; applyToMe = true; }
-  }
-  if (q.special === 'finisher') {
-    if (correct) { dmg = 0; applyToMe = false; }
-    else { applyToMe = true; }
-  }
-  if (q.special === 'shield') {
-    // attacker has shield → halve damage if defender answers correctly
-    // actually shield means: attacker reduces own damage received
-    // re-interpret: shield means defender's correct answer only halves damage to attacker
-    if (!correct) dmg = Math.floor(dmg / 2);
+  if(!correct){
+    // 誤答: -5HP、2秒ロック
+    answerBusy=true;
+    document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+    const newHp=Math.max(0,myS().hp-5);
+    await roomRef.update({[`${mySlot}/hp`]:newHp});
+    log(`❌ ${myName}まちがい！ じぶんに5ダメージ！`);
+    flashMe();
+    if(newHp<=0){await roomRef.update({winner:enSlot(),phase:'ended'});return;}
+    setTimeout(()=>{
+      if(state.phase!=='question'){return;}
+      answerBusy=false;
+      document.querySelectorAll('.choice-btn').forEach(b=>{
+        b.disabled=false;
+        b.classList.remove('correct','wrong','dimmed','locked-out');
+      });
+    },2000);
+    return;
   }
 
-  // calculate who gets hit
-  // Normal logic: attacker sends question → defender answers
-  // If defender correct → attacker takes damage (they failed to stump them)... 
-  // Actually the fun rule: defender WRONG → attacker does damage to DEFENDER
-  // So: correct → no damage, wrong → defender (me) takes damage
-  applyToMe = !correct;
+  // 正解！ → トランザクションで先取り
+  answerBusy=true;
+  clearInterval(timerIv);
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
 
-  const targetSlot = applyToMe ? mySlot : enemySlot();
-  const newHp = Math.max(0, state[targetSlot].hp - (applyToMe ? dmg : Math.floor(dmg*0.5)));
+  const mw=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
+  const ew=WAZA.find(x=>x.id===state.waza[enSlot()])||WAZA[0];
+  let dmg=mw.dmg;
+  if(ew.id==='barrier')dmg=Math.floor(dmg/2);
 
-  // exp for correct answer
-  let myNewExp = myState().exp;
-  let myNewLv  = myState().lv;
-  if (correct) {
-    myNewExp += 3;
-    const expNeeded = expForNextLv(myNewLv);
-    if (myNewExp >= expNeeded) {
-      myNewExp -= expNeeded;
-      myNewLv = Math.min(100, myNewLv + 1);
-      addLog(`🎉 ${myName} LV${myNewLv}にあがった！`, 'log-evo');
+  const res=await roomRef.child('roundResult').transaction(cur=>{
+    if(cur!==null)return;// すでに先取りされている
+    return{winner:mySlot,damage:dmg,loser:enSlot()};
+  });
+
+  if(res.committed){
+    // 私が先取り → ダメージ適用してラウンド終了
+    roundOwner=true;
+    log(`✅ ${myName}せいかい！ あいてに${dmg}ダメージ！`);
+    const newEnHp=Math.max(0,enS().hp-dmg);
+    let exp=myS().exp+3,lv=myS().lv;
+    while(exp>=expNeeded(lv)&&lv<100){exp-=expNeeded(lv);lv++;}
+    const won=newEnHp<=0;
+    await roomRef.update({
+      [`${enSlot()}/hp`]:newEnHp,
+      [`${mySlot}/exp`]:exp,
+      [`${mySlot}/lv`]:lv,
+      phase:won?'ended':'roundEnd',
+      winner:won?mySlot:null,
+      turn:enSlot(),
+    });
+    if(won)log(`🏆 ${myName}のかち！`);
+    else{
+      // 2秒後に次ラウンドへ
+      setTimeout(()=>nextRound(),2000);
     }
-    addLog(`✅ ${myName}せいかい！`, 'log-miss');
   } else {
-    addLog(`❌ ${myName}まちがい！ ${dmg}ダメージ！`, 'log-hit');
-    flashDamage();
+    log(`💨 ${myName}せいかい！でも あいてのほうがはやかった…`);
   }
-
-  // exp for attacker (they stumped the defender if wrong)
-  let attSlot = enemySlot();
-  let attExp  = state[attSlot].exp;
-  let attLv   = state[attSlot].lv;
-  if (!correct) {
-    attExp += 2;
-    if (attExp >= expForNextLv(attLv)) {
-      attExp -= expForNextLv(attLv);
-      attLv = Math.min(100, attLv + 1);
-    }
-  }
-
-  const winner = newHp <= 0 ? (applyToMe ? enemySlot() : mySlot) : null;
-
-  const updates = {
-    [`${targetSlot}/hp`]: newHp,
-    [`${mySlot}/exp`]: myNewExp,
-    [`${mySlot}/lv`]: myNewLv,
-    [`${attSlot}/exp`]: attExp,
-    [`${attSlot}/lv`]: attLv,
-    phase: winner ? 'result' : 'attack',
-    turn: winner ? state.turn : enemySlot(),
-    currentQ: null,
-    winner: winner || null,
-  };
-  await roomRef.update(updates);
 }
 
-function expForNextLv(lv) {
-  return Math.min(10 + lv * 2, 50);
-}
-
-// ── WAIT PHASE ──
-function showWaitPhase() {
-  hideAllPhases();
-  document.getElementById('phaseWait').style.display = '';
-}
-
-function hideAllPhases() {
-  ['phaseAttack','phaseQuestion','phaseWait'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
+async function onTimeout(q){
+  if(answerBusy&&!roundOwner)return;// 既に誰かが処理中
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  // タイムアウト: 両者-10HP。ターンプレイヤーが書き込む
+  if(!isTurn())return;
+  const newMyHp=Math.max(0,myS().hp-10);
+  const newEnHp=Math.max(0,enS().hp-10);
+  flashMe();
+  log('⏰ じかんぎれ！ りょうしゃに10ダメージ！');
+  const won=newEnHp<=0?mySlot:newMyHp<=0?enSlot():null;
+  await roomRef.update({
+    [`${mySlot}/hp`]:newMyHp,
+    [`${enSlot()}/hp`]:newEnHp,
+    phase:won?'ended':'roundEnd',
+    winner:won||null,
+    turn:enSlot(),
+    roundResult:{winner:null,damage:10,loser:null},
   });
+  if(!won)setTimeout(()=>nextRound(),2000);
 }
 
-// ──────────────────────────────────────────
-//  UI UPDATE
-// ──────────────────────────────────────────
-function updateBattleUI() {
-  const my = myState();
-  const en = enemyState();
-
-  // names
-  document.getElementById('playerName').textContent = my.name || myName;
-  document.getElementById('enemyName').textContent  = en.name || '？？？';
-  document.getElementById('playerLv').textContent   = `LV.${my.lv} ${stageNameForLv(my.lv)}`;
-  document.getElementById('enemyLv').textContent    = `LV.${en.lv} ${stageNameForLv(en.lv)}`;
-
-  // HP
-  const myPct = (my.hp / MAX_HP) * 100;
-  const enPct = (en.hp / MAX_HP) * 100;
-  document.getElementById('playerHpBar').style.width = myPct + '%';
-  document.getElementById('enemyHpBar').style.width  = enPct + '%';
-  document.getElementById('playerHpBar').style.background = hpColor(myPct);
-  document.getElementById('enemyHpBar').style.background  = hpColor(enPct);
-  document.getElementById('playerHpText').textContent = `${my.hp}/${MAX_HP}`;
-  document.getElementById('enemyHpText').textContent  = `${en.hp}/${MAX_HP}`;
-
-  // EXP
-  const expNeeded = expForNextLv(my.lv);
-  document.getElementById('expBar').style.width = ((my.exp / expNeeded)*100) + '%';
-  document.getElementById('expText').textContent = `${my.exp}/${expNeeded}`;
-
-  // Draw characters
-  drawForLv(document.getElementById('playerCanvas'), my.lv);
-  drawForLv(document.getElementById('enemyCanvas'),  en.lv);
+function onRoundEnd(result){
+  if(roundOwner)return;// roundOwner側がすでにnextRoundを予約済み
+  // 負けた側も2秒待って次へ（ターンが変わるので次はこちらが問題を出す）
+  // UIの更新はlistenerが担当
 }
 
-function hpColor(pct) {
-  if (pct > 60) return 'var(--green)';
-  if (pct > 30) return 'var(--gold)';
-  return 'var(--accent)';
+async function nextRound(){
+  const snap=await roomRef.once('value');
+  if(snap.val()&&snap.val().winner)return;
+  await roomRef.update({phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null});
 }
 
-function addLog(msg, cls='') {
-  const log = document.getElementById('battleLog');
-  const span = document.createElement('span');
-  span.className = cls;
-  span.textContent = msg + ' ';
-  log.appendChild(span);
-  log.scrollTop = log.scrollHeight;
+// ─── UI UPDATE ───
+function updateUI(){
+  const my=myS(),en=enS();
+  document.getElementById('playerName').textContent=my.name||myName;
+  document.getElementById('enemyName').textContent=en.name||'？？？';
+  document.getElementById('playerLv').textContent=`LV.${my.lv} ${stageForLv(my.lv)}`;
+  document.getElementById('enemyLv').textContent=`LV.${en.lv} ${stageForLv(en.lv)}`;
+  document.getElementById('playerHpNums').textContent=`${my.hp}/${MAX_HP}`;
+  setHp('playerHpFill',(my.hp/MAX_HP)*100);
+  setHp('enemyHpFill',(en.hp/MAX_HP)*100);
+  const need=expNeeded(my.lv);
+  document.getElementById('expFill').style.width=((my.exp/need)*100)+'%';
+  drawForLv(document.getElementById('playerCanvas'),my.lv);
+  drawForLv(document.getElementById('enemyCanvas'),en.lv);
 }
 
-function flashDamage() {
-  const el = document.getElementById('damageFlash');
-  el.classList.add('hit');
-  const fighter = document.getElementById('fighterPlayer');
-  fighter.classList.add('shake');
-  setTimeout(() => { el.classList.remove('hit'); fighter.classList.remove('shake'); }, 400);
+function setHp(id,pct){
+  const el=document.getElementById(id);
+  el.style.width=pct+'%';
+  el.style.background=pct>50?'var(--green)':pct>25?'var(--gold)':'var(--red)';
 }
 
-function clearTimer() {
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+function hidePhases(){
+  ['phaseWaza','phaseQuestion','phaseWait'].forEach(id=>document.getElementById(id).style.display='none');
 }
 
-// ──────────────────────────────────────────
-//  RESULT
-// ──────────────────────────────────────────
-function endBattle(winnerSlot) {
-  clearTimer();
-  unsubscribes.forEach(f => f());
-  const iWon = winnerSlot === mySlot;
+function log(msg){document.getElementById('battleMsg').textContent=msg;}
+
+function flashMe(){
+  const f=document.getElementById('dmgFlash');f.classList.add('hit');
+  document.getElementById('statusPlayer').classList.add('shake');
+  setTimeout(()=>{f.classList.remove('hit');document.getElementById('statusPlayer').classList.remove('shake');},350);
+}
+
+function expNeeded(lv){return Math.min(10+lv*2,50);}
+
+// ─── RESULT ───
+function endBattle(ws){
+  clearInterval(timerIv);clearInterval(wazaIv);
+  listeners.forEach(f=>f());
+  const won=ws===mySlot;
   showScreen('screenResult');
-  const titleEl = document.getElementById('resultTitle');
-  titleEl.textContent = iWon ? '🎉 WIN！' : '💀 LOSE…';
-  titleEl.className = 'result-title ' + (iWon ? 'result-win' : 'result-lose');
-  const rc = document.getElementById('resultCanvas');
-  drawForLv(rc, myState().lv);
-  document.getElementById('resultMsg').textContent =
-    iWon
-      ? `すごい！${myName}のかちだ！\nLV.${myState().lv}まであがったよ！`
-      : `つぎはかつぞ！\nまたちょうせんしよう！`;
+  const t=document.getElementById('resultTitle');
+  t.textContent=won?'🎉 WIN！':'💀 LOSE…';
+  t.className='result-title '+(won?'result-win':'result-lose');
+  drawForLv(document.getElementById('resultCanvas'),myS().lv);
+  document.getElementById('resultMsg').innerHTML=
+    won?`すごい！${myName}のかち！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」`
+       :`つぎはかつぞ！<br>またちょうせんしよう！`;
 }
 
-async function playAgain() {
-  if (roomRef) await roomRef.remove();
-  showScreen('screenTitle');
-}
-function goTitle() {
-  if (roomRef) roomRef.remove();
-  showScreen('screenTitle');
-}
+async function playAgain(){if(roomRef)await roomRef.remove();showScreen('screenTitle');}
+function goTitle(){if(roomRef)roomRef.remove();showScreen('screenTitle');}
 
-// ──────────────────────────────────────────
-//  SCREEN UTIL
-// ──────────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+// ─── SCREEN ───
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setMsg(scr,msg,type=''){const el=document.getElementById('msg'+scr);if(!el)return;el.textContent=msg;el.className='msg '+type;}
 
-function setMsg(screenId, msg, type='') {
-  const el = document.getElementById('msg' + screenId.replace('screen',''));
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'msg ' + type;
-}
-
-// Draw title character
-drawEgg(document.getElementById('titleCanvas'));
+// init
+drawHiyoko(document.getElementById('titleCanvas'));
 </script>
 </body>
 </html>
