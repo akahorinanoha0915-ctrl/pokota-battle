@@ -177,7 +177,8 @@ input[type=text]:focus{border-color:var(--green);}
   <canvas id="titleCanvas" width="24" height="24" style="image-rendering:pixelated;width:96px;height:96px;border:2px solid #3a2a7a;border-radius:12px;background:#050410;margin:4px auto"></canvas>
   <div class="panel">
     <div class="panel-title">👤 なまえをいれよう</div>
-    <input type="text" id="inputName" placeholder="ぷれいやーなまえ" maxlength="10">
+    <input type="text" id="inputName" placeholder="ぷれいやーなまえ" maxlength="10" oninput="updateSaveInfo(this.value.trim())">
+    <div id="saveInfo" style="font-size:.72rem;color:var(--green);margin-top:4px;min-height:1.2em"></div>
   </div>
   <div class="panel">
     <div class="panel-title">🔥 Firebase せってい</div>
@@ -278,6 +279,34 @@ input[type=text]:focus{border-color:var(--green);}
 </div>
 
 <script>
+// ══════════════════════════════════════════
+//  SAVE SYSTEM (localStorage)
+// ══════════════════════════════════════════
+const SAVE={
+  saveFb(url,key){localStorage.setItem('pk_url',url);localStorage.setItem('pk_key',key);},
+  loadFb(){return{url:localStorage.getItem('pk_url')||'',key:localStorage.getItem('pk_key')||''};},
+  saveProgress(name,lv,exp){localStorage.setItem(`pk_lv_${name}`,lv);localStorage.setItem(`pk_exp_${name}`,exp);},
+  loadProgress(name){return{lv:parseInt(localStorage.getItem(`pk_lv_${name}`)||'1'),exp:parseInt(localStorage.getItem(`pk_exp_${name}`)||'0')};},
+  saveName(name){localStorage.setItem('pk_name',name);},
+  loadName(){return localStorage.getItem('pk_name')||'';}
+};
+
+function updateSaveInfo(name){
+  const el=document.getElementById('saveInfo');if(!el)return;
+  if(!name){el.textContent='';return;}
+  const p=SAVE.loadProgress(name);
+  if(p.lv>1||p.exp>0) el.textContent=`💾 セーブあり: LV.${p.lv} ${stageForLv(p.lv)} (EXP:${p.exp})`;
+  else el.textContent='';
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const fb=SAVE.loadFb();
+  if(fb.url) document.getElementById('inputFbUrl').value=fb.url;
+  if(fb.key) document.getElementById('inputFbApiKey').value=fb.key;
+  const name=SAVE.loadName();
+  if(name){document.getElementById('inputName').value=name;updateSaveInfo(name);}
+});
+
 // ══════════════════════════════════════════
 //  AUDIO SYSTEM
 // ══════════════════════════════════════════
@@ -601,7 +630,7 @@ function initFb(){
   if(!url||!key) return false;
   try{
     if(!firebase.apps.length) firebase.initializeApp({apiKey:key,databaseURL:url});
-    db=firebase.database(); return true;
+    db=firebase.database(); SAVE.saveFb(url,key); return true;
   }catch(e){console.error(e);return false;}
 }
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
@@ -614,10 +643,11 @@ async function createRoom(){
   const name=document.getElementById('inputName').value.trim();
   if(!name) return setMsg('Title','なまえをいれてね！','error');
   if(!initFb()) return setMsg('Title','FirebaseのURLとAPIKeyをいれてね！','error');
-  myName=name;mySlot='p1';roomId=genCode();
+  myName=name;mySlot='p1';roomId=genCode();SAVE.saveName(name);
+  const sv1=SAVE.loadProgress(name);
   document.getElementById('displayRoomCode').textContent=roomId;
   roomRef=db.ref('rooms/'+roomId);
-  await roomRef.set({p1:{name,hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,createdAt:Date.now()});
+  await roomRef.set({p1:{name,hp:MAX_HP,lv:sv1.lv,exp:sv1.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,createdAt:Date.now()});
   showScreen('screenWaiting');
   roomRef.on('value',snap=>{
     const d=snap.val();
@@ -632,12 +662,13 @@ async function joinRoom(){
   if(!name) return setMsg('Join','なまえをいれてね！','error');
   if(code.length!==4) return setMsg('Join','4けたのコードをいれてね','error');
   if(!db&&!initFb()) return setMsg('Join','FirebaseのURLとAPIKeyをいれてね！','error');
-  myName=name;mySlot='p2';roomId=code;
+  myName=name;mySlot='p2';roomId=code;SAVE.saveName(name);
+  const sv2=SAVE.loadProgress(name);
   roomRef=db.ref('rooms/'+roomId);
   const snap=await roomRef.once('value');const d=snap.val();
   if(!d) return setMsg('Join','そのへやはないよ','error');
   if(d.p2&&d.p2.name) return setMsg('Join','そのへやはもういっぱいだよ','error');
-  await roomRef.update({'p2/name':name,phase:'waza'});
+  await roomRef.update({'p2/name':name,'p2/lv':sv2.lv,'p2/exp':sv2.exp,phase:'waza'});
   const s2=await roomRef.once('value');state=s2.val();
   startBattle();
 }
@@ -906,6 +937,7 @@ function endBattle(ws){
   clearInterval(timerIv);clearInterval(wazaIv);
   listeners.forEach(f=>f());
   SFX.stopBGM();
+  SAVE.saveProgress(myName,myS().lv,myS().exp);
   const won=ws===mySlot;
   setTimeout(()=>SFX.se(won?'win':'lose'),300);
   showScreen('screenResult');
@@ -914,8 +946,8 @@ function endBattle(ws){
   t.className='result-title '+(won?'result-win':'result-lose');
   drawForLv(document.getElementById('resultCanvas'),myS().lv);
   document.getElementById('resultMsg').innerHTML=
-    won?`すごい！${myName}のかち！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」`
-       :`つぎはかつぞ！<br>またちょうせんしよう！`;
+    won?`すごい！${myName}のかち！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`
+       :`つぎはかつぞ！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`;
 }
 
 async function playAgain(){if(roomRef)await roomRef.remove();showScreen('screenTitle');}
