@@ -180,12 +180,6 @@ input[type=text]:focus{border-color:var(--green);}
     <input type="text" id="inputName" placeholder="ぷれいやーなまえ" maxlength="10" oninput="updateSaveInfo(this.value.trim())">
     <div id="saveInfo" style="font-size:.72rem;color:var(--green);margin-top:4px;min-height:1.2em"></div>
   </div>
-  <div class="panel">
-    <div class="panel-title">🔥 Firebase せってい</div>
-    <input type="text" id="inputFbUrl" placeholder="Database URL (https://xxx.firebaseio.com)">
-    <input type="text" id="inputFbApiKey" placeholder="API Key">
-    <div class="msg" style="margin-top:4px">※ <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue)">console.firebase.google.com</a></div>
-  </div>
   <div class="btn-row">
     <button class="btn btn-green" onclick="createRoom()">🏠 へやをつくる</button>
     <button class="btn btn-blue"  onclick="showJoin()">🚪 へやにはいる</button>
@@ -300,9 +294,6 @@ function updateSaveInfo(name){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  const fb=SAVE.loadFb();
-  if(fb.url) document.getElementById('inputFbUrl').value=fb.url;
-  if(fb.key) document.getElementById('inputFbApiKey').value=fb.key;
   const name=SAVE.loadName();
   if(name){document.getElementById('inputName').value=name;updateSaveInfo(name);}
 });
@@ -618,19 +609,21 @@ function stageForLv(lv){return STAGE_NAMES[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4
 let db=null,roomId=null,mySlot=null,myName='',roomRef=null;
 let listeners=[];
 const MAX_HP=100;
-let state={p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null};
+let state={p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null};
 let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false;
+let questionHistory=[];
+const Q_HISTORY_SIZE=15;
 
 // ══════════════════════════════════════════
 //  FIREBASE
 // ══════════════════════════════════════════
+const FB_URL='https://word-battle-5f097-default-rtdb.firebaseio.com';
+const FB_KEY='AIzaSyByGcaCIPfT3XdPSrl7IhQgv8CqGrRs1Jo';
+
 function initFb(){
-  const url=document.getElementById('inputFbUrl').value.trim();
-  const key=document.getElementById('inputFbApiKey').value.trim();
-  if(!url||!key) return false;
   try{
-    if(!firebase.apps.length) firebase.initializeApp({apiKey:key,databaseURL:url});
-    db=firebase.database(); SAVE.saveFb(url,key); return true;
+    if(!firebase.apps.length) firebase.initializeApp({apiKey:FB_KEY,databaseURL:FB_URL});
+    db=firebase.database(); return true;
   }catch(e){console.error(e);return false;}
 }
 function genCode(){return String(Math.floor(1000+Math.random()*9000));}
@@ -642,12 +635,12 @@ async function createRoom(){
   SFX._init();SFX._resume();
   const name=document.getElementById('inputName').value.trim();
   if(!name) return setMsg('Title','なまえをいれてね！','error');
-  if(!initFb()) return setMsg('Title','FirebaseのURLとAPIKeyをいれてね！','error');
+  if(!initFb()) return setMsg('Title','せつぞくにしっぱいしたよ…もう一度ためしてね','error');
   myName=name;mySlot='p1';roomId=genCode();SAVE.saveName(name);
   const sv1=SAVE.loadProgress(name);
   document.getElementById('displayRoomCode').textContent=roomId;
   roomRef=db.ref('rooms/'+roomId);
-  await roomRef.set({p1:{name,hp:MAX_HP,lv:sv1.lv,exp:sv1.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,createdAt:Date.now()});
+  await roomRef.set({p1:{name,hp:MAX_HP,lv:sv1.lv,exp:sv1.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()});
   showScreen('screenWaiting');
   roomRef.on('value',snap=>{
     const d=snap.val();
@@ -661,7 +654,7 @@ async function joinRoom(){
   const code=document.getElementById('inputRoomCode').value.trim();
   if(!name) return setMsg('Join','なまえをいれてね！','error');
   if(code.length!==4) return setMsg('Join','4けたのコードをいれてね','error');
-  if(!db&&!initFb()) return setMsg('Join','FirebaseのURLとAPIKeyをいれてね！','error');
+  if(!db&&!initFb()) return setMsg('Join','せつぞくにしっぱいしたよ…もう一度ためしてね','error');
   myName=name;mySlot='p2';roomId=code;SAVE.saveName(name);
   const sv2=SAVE.loadProgress(name);
   roomRef=db.ref('rooms/'+roomId);
@@ -679,7 +672,7 @@ function showJoin(){
   SFX._init();SFX._resume();
   const name=document.getElementById('inputName').value.trim();
   if(!name) return setMsg('Title','なまえをいれてね！','error');
-  if(!initFb()) return setMsg('Title','FirebaseのURLとAPIKeyをいれてね！','error');
+  if(!initFb()) return setMsg('Title','せつぞくにしっぱいしたよ…もう一度ためしてね','error');
   showScreen('screenJoin');
 }
 
@@ -712,6 +705,11 @@ function listenRoom(){
     if(d.phase==='waza'&&prev!=='waza') startWazaPhase();
     if(d.phase==='question'&&prev!=='question') showQuestion(d.question);
     if(d.phase==='waza'&&myWazaDone&&d.waza&&d.waza[enSlot()]&&isTurn()) tryGenQ();
+    if(d.phase==='question'&&d.wrongAnswers&&d.wrongAnswers.p1&&d.wrongAnswers.p2&&isTurn()){
+      clearInterval(timerIv);
+      log('❌❌ ふたりともまちがい！ つぎのラウンドへ！');
+      setTimeout(()=>nextRound(),1000);
+    }
   });
   listeners.push(()=>roomRef.off('value',h));
 }
@@ -772,7 +770,15 @@ function makeQ(){
   let pool=[];
   CATEGORIES.forEach(cat=>{if(lv>=cat.minLv)pool=pool.concat(cat.words);});
   if(!pool.length) pool=CATEGORIES[0].words;
-  const word=pool[Math.floor(Math.random()*pool.length)];
+  let candidates=pool.filter(w=>!questionHistory.includes(w.en));
+  if(candidates.length<4){
+    questionHistory=questionHistory.slice(Math.floor(Q_HISTORY_SIZE/2));
+    candidates=pool.filter(w=>!questionHistory.includes(w.en));
+    if(!candidates.length){candidates=pool;questionHistory=[];}
+  }
+  const word=candidates[Math.floor(Math.random()*candidates.length)];
+  questionHistory.push(word.en);
+  if(questionHistory.length>Q_HISTORY_SIZE) questionHistory.shift();
   const all=[];CATEGORIES.forEach(cat=>all.push(...cat.words));
   const wrongs=all.filter(w=>w.jp!==word.jp).sort(()=>Math.random()-.5).slice(0,3).map(w=>w.jp);
   return{en:word.en,answer:word.jp,choices:[...wrongs,word.jp].sort(()=>Math.random()-.5),startedAt:Date.now()};
@@ -823,7 +829,7 @@ async function onAnswer(chosen,q){
     SFX.se('wrong');
     document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
     const newHp=Math.max(0,myS().hp-5);
-    await roomRef.update({[`${mySlot}/hp`]:newHp});
+    await roomRef.update({[`${mySlot}/hp`]:newHp,[`wrongAnswers/${mySlot}`]:true});
     flashCanvas('playerCanvas',false);
     flashDmg();
     spawnFloat('-5',true,'#e94560');
@@ -896,7 +902,7 @@ async function onTimeout(q){
 async function nextRound(){
   const snap=await roomRef.once('value');
   if(snap.val()?.winner) return;
-  await roomRef.update({phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null});
+  await roomRef.update({phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null,wrongAnswers:null});
 }
 
 // ─ UI ─
@@ -950,7 +956,26 @@ function endBattle(ws){
        :`つぎはかつぞ！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`;
 }
 
-async function playAgain(){if(roomRef)await roomRef.remove();showScreen('screenTitle');}
+async function playAgain(){
+  if(roomRef) await roomRef.remove();
+  SFX.stopBGM();
+  questionHistory=[];
+  if(mySlot==='p1'){
+    const sv=SAVE.loadProgress(myName);
+    roomId=genCode();
+    document.getElementById('displayRoomCode').textContent=roomId;
+    roomRef=db.ref('rooms/'+roomId);
+    await roomRef.set({p1:{name:myName,hp:MAX_HP,lv:sv.lv,exp:sv.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()});
+    showScreen('screenWaiting');
+    roomRef.on('value',snap=>{
+      const d=snap.val();
+      if(d&&d.p2&&d.p2.name&&d.phase==='waza'){roomRef.off('value');state=d;startBattle();}
+    });
+  } else {
+    document.getElementById('inputName').value=myName;
+    showScreen('screenJoin');
+  }
+}
 function goTitle(){if(roomRef)roomRef.remove();SFX.stopBGM();showScreen('screenTitle');}
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
