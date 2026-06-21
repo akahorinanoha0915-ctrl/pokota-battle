@@ -957,24 +957,35 @@ function endBattle(ws){
 }
 
 async function playAgain(){
-  if(roomRef) await roomRef.remove();
   SFX.stopBGM();
   questionHistory=[];
-  if(mySlot==='p1'){
-    const sv=SAVE.loadProgress(myName);
-    roomId=genCode();
-    document.getElementById('displayRoomCode').textContent=roomId;
-    roomRef=db.ref('rooms/'+roomId);
-    await roomRef.set({p1:{name:myName,hp:MAX_HP,lv:sv.lv,exp:sv.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()});
-    showScreen('screenWaiting');
-    roomRef.on('value',snap=>{
-      const d=snap.val();
-      if(d&&d.p2&&d.p2.name&&d.phase==='waza'){roomRef.off('value');state=d;startBattle();}
-    });
-  } else {
-    document.getElementById('inputName').value=myName;
-    showScreen('screenJoin');
-  }
+  const btn=document.querySelector('#screenResult .btn-green');
+  btn.disabled=true;btn.textContent='まってるよ…';
+
+  await roomRef.update({[`rematch/${mySlot}`]:true});
+
+  const h=roomRef.on('value',async snap=>{
+    const d=snap.val();if(!d) return;
+    if(!(d.rematch&&d.rematch.p1&&d.rematch.p2)) return;
+    roomRef.off('value',h);
+    if(mySlot==='p1'){
+      await roomRef.update({
+        'p1/hp':MAX_HP,'p2/hp':MAX_HP,
+        phase:'waza','waza/p1':null,'waza/p2':null,
+        question:null,roundResult:null,winner:null,
+        wrongAnswers:null,rematch:null,turn:'p1'
+      });
+      const s=await roomRef.once('value');
+      state=s.val();startBattle();
+    } else {
+      const h2=roomRef.on('value',s2=>{
+        const d2=s2.val();if(!d2) return;
+        if(d2.phase==='waza'&&!d2.rematch){
+          roomRef.off('value',h2);state=d2;startBattle();
+        }
+      });
+    }
+  });
 }
 function goTitle(){if(roomRef)roomRef.remove();SFX.stopBGM();showScreen('screenTitle');}
 
