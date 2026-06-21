@@ -1237,7 +1237,7 @@ function startWazaPhase(){
   hidePhases();
   document.getElementById('phaseWaza').style.display='';
   renderWaza();
-  let cnt=5;document.getElementById('wazaCd').textContent=cnt;
+  let cnt=8;document.getElementById('wazaCd').textContent=cnt;
   wazaIv=setInterval(()=>{
     cnt--;
     document.getElementById('wazaCd').textContent=cnt;
@@ -1531,20 +1531,25 @@ async function playAgain(){
     if(mySlot==='p1'){
       await roomRef.update({
         'p1/hp':MAX_HP,'p2/hp':MAX_HP,
-        phase:'charSelect',
-        'charChoice/p1':null,'charChoice/p2':null,
+        phase:'waza',
         'waza/p1':null,'waza/p2':null,
         'status/p1':null,'status/p2':null,
         question:null,roundResult:null,winner:null,
         wrongAnswers:null,rematch:null,turn:'p1'
       });
       const s=await roomRef.once('value');
-      state=s.val();startBattle();
+      state=s.val();
+      showScreen('screenBattle');updateUI();listenRoom();startWazaPhase();
+      log('バトルかいし！ さきにせいかいした方のかち！🔥');
+      SFX.se('start');setTimeout(()=>SFX.playBGM(),800);
     } else {
       const h2=roomRef.on('value',s2=>{
         const d2=s2.val();if(!d2) return;
         if(d2.phase==='waza'&&!d2.rematch){
-          roomRef.off('value',h2);state=d2;startBattle();
+          roomRef.off('value',h2);state=d2;
+          showScreen('screenBattle');updateUI();listenRoom();startWazaPhase();
+          log('バトルかいし！ さきにせいかいした方のかち！🔥');
+          SFX.se('start');setTimeout(()=>SFX.playBGM(),800);
         }
       });
     }
