@@ -1078,7 +1078,9 @@ let state={
   charChoice:{p1:null,p2:null},
   waza:{p1:null,p2:null},
   status:{p1:null,p2:null},
-  question:null,roundResult:null,winner:null,wrongAnswers:null
+  questions:{p1:null,p2:null},
+  roundAnswer:{p1:null,p2:null},
+  roundResult:null,winner:null
 };
 let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false,myCharDone=false;
 let questionHistory=[];
@@ -1116,7 +1118,7 @@ async function createRoom(){
     charChoice:{p1:null,p2:null},
     waza:{p1:null,p2:null},
     status:{p1:null,p2:null},
-    question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()
+    questions:{p1:null,p2:null},roundAnswer:{p1:null,p2:null},roundResult:null,winner:null,createdAt:Date.now()
   });
   showScreen('screenWaiting');
   roomRef.on('value',snap=>{
@@ -1179,13 +1181,11 @@ function listenRoom(){
     if(d.winner){endBattle(d.winner);return;}
     if(d.phase==='charSelect'&&prev!=='charSelect') startCharSelectPhase();
     if(d.phase==='charSelect'&&d.charChoice&&d.charChoice.p1&&d.charChoice.p2&&myCharDone&&isTurn()) roomRef.update({phase:'waza'});
-    if(d.phase==='waza'&&prev!=='waza'){showScreen('screenBattle');updateUI();startWazaPhase();log('バトルかいし！ さきにせいかいした方のかち！🔥');}
-    if(d.phase==='question'&&prev!=='question') showQuestion(d.question);
+    if(d.phase==='waza'&&prev!=='waza'){showScreen('screenBattle');updateUI();startWazaPhase();log('バトルかいし！ じぶんの問題にこたえてあいてにダメージ！🔥');}
+    if(d.phase==='question'&&prev!=='question') showQuestion(d.questions?.[mySlot]);
     if(d.phase==='waza'&&myWazaDone&&d.waza&&d.waza[enSlot()]&&isTurn()) tryGenQ();
-    if(d.phase==='question'&&d.wrongAnswers&&d.wrongAnswers.p1&&d.wrongAnswers.p2&&isTurn()){
-      clearInterval(timerIv);
-      log('❌❌ ふたりともまちがい！ つぎのラウンドへ！');
-      setTimeout(()=>nextRound(),1000);
+    if(d.phase==='question'&&d.roundAnswer&&d.roundAnswer.p1!==null&&d.roundAnswer.p2!==null&&isTurn()){
+      calculateRoundResult(d);
     }
   });
   listeners.push(()=>roomRef.off('value',h));
@@ -1279,8 +1279,13 @@ async function tryGenQ(){
   const snap=await roomRef.once('value');const d=snap.val();
   if(d.phase!=='waza') return;
   if(!d.waza||!d.waza.p1||!d.waza.p2) return;
-  const q=makeQ();
-  await roomRef.update({phase:'question',question:q,roundResult:null});
+  const q1=makeQ(),q2=makeQ();
+  await roomRef.update({
+    phase:'question',
+    'questions/p1':q1,'questions/p2':q2,
+    'roundAnswer/p1':null,'roundAnswer/p2':null,
+    roundResult:null
+  });
 }
 
 function makeQ(){
@@ -1337,102 +1342,116 @@ function showQuestion(q){
 
 async function onAnswer(chosen,q){
   if(answerBusy) return;
+  answerBusy=true;
+  clearInterval(timerIv);
+  document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
   const correct=chosen===q.answer;
   document.querySelectorAll('.cb').forEach(b=>{
     if(b.textContent===q.answer) b.classList.add('correct');
     else if(b.textContent===chosen&&!correct) b.classList.add('wrong');
     else b.classList.add('dimmed');
   });
-
-  if(!correct){
-    answerBusy=true;
-    SFX.se('wrong');
-    document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
-    const newHp=Math.max(0,myS().hp-5);
-    await roomRef.update({[`${mySlot}/hp`]:newHp,[`wrongAnswers/${mySlot}`]:true});
-    flashCanvas('playerCanvas',false);
-    flashDmg();
-    spawnFloat('-5',true,'#e94560');
-    log(`❌ ${myName}まちがい！ じぶんに5ダメージ！`);
-    SFX.se('damage');
-    if(newHp<=0){await roomRef.update({winner:enSlot(),phase:'ended'});return;}
-    setTimeout(()=>{
-      if(state.phase!=='question') return;
-      answerBusy=false;
-      document.querySelectorAll('.cb').forEach(b=>{b.disabled=false;b.classList.remove('correct','wrong','dimmed');});
-    },2000);
-    return;
-  }
-
-  answerBusy=true;
-  clearInterval(timerIv);
-  document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
-  SFX.se('correct');
-
-  const mw=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
-  const ew=WAZA.find(x=>x.id===state.waza[enSlot()])||WAZA[0];
-  const myChar=charById(state.charChoice?.[mySlot]);
-  const enChar=charById(state.charChoice?.[enSlot()]);
-  let dmg=mw.dmg;
-  if(ew.id==='barrier') dmg=Math.floor(dmg/2);
-  // タイプ相性
-  const typeMult=getTypeMultiplier(myChar.type,enChar.type);
-  dmg=Math.round(dmg*typeMult);
-  // クリティカル（10%）
-  const isCrit=Math.random()<0.1;
-  if(isCrit) dmg=Math.round(dmg*1.5);
-  // 状態異常技
-  const newStatus=mw.status;
-
-  const res=await roomRef.child('roundResult').transaction(cur=>{
-    if(cur!==null) return;
-    return{winner:mySlot,damage:dmg,loser:enSlot()};
-  });
-
-  if(res.committed){
-    roundOwner=true;
-    attackCanvas('playerCanvas');
-    setTimeout(()=>{
-      flashCanvas('enemyCanvas',true);
-      SFX.se('damage');
-      spawnFloat(`-${dmg}`,false,'#e94560');
-    },300);
-
-    const newEnHp=Math.max(0,enS().hp-dmg);
-    const oldLv=myS().lv;
-    let exp=myS().exp+3,lv=myS().lv;
-    while(exp>=expNeeded(lv)&&lv<100){exp-=expNeeded(lv);lv++;}
-    if(lv>oldLv) setTimeout(()=>{lvUpEffect(true);SFX.se('levelup');},800);
-
-    let dmgMsg=`✅ せいかい！ あいてに${dmg}ダメージ！`;
-    if(typeMult>=2) dmgMsg=`🔥 こうかはばつぐんだ！ ${dmg}ダメージ！`;
-    else if(typeMult<=0.5) dmgMsg=`😓 こうかはいまひとつ… ${dmg}ダメージ`;
-    if(isCrit) dmgMsg=`💥 CRITICAL！ ${dmg}ダメージ！！`;
-    if(newStatus) dmgMsg+=` ${newStatus==='poison'?'☠️どくを入れた！':'⚡まひさせた！'}`;
-    log(dmgMsg);
-
-    const statusUpdate=newStatus?{[`status/${enSlot()}`]:newStatus}:{};
-    const won=newEnHp<=0;
-    await roomRef.update({[`${enSlot()}/hp`]:newEnHp,[`${mySlot}/exp`]:exp,[`${mySlot}/lv`]:lv,phase:won?'ended':'roundEnd',winner:won?mySlot:null,turn:enSlot(),...statusUpdate});
-    if(won) log(`🏆 ${myName}のかち！`);
-    else setTimeout(()=>nextRound(),2200);
-  } else {
-    log(`💨 ${myName}せいかい！でも あいてのほうがはやかった…`);
+  SFX.se(correct?'correct':'wrong');
+  if(correct) log('✅ せいかい！あいてのこたえをまってるよ…');
+  else log('❌ まちがい… あいてのこたえをまってるよ');
+  await roomRef.update({[`roundAnswer/${mySlot}`]:correct});
+  const snap=await roomRef.once('value');const d=snap.val();
+  if(d.roundAnswer&&d.roundAnswer.p1!==null&&d.roundAnswer.p2!==null&&isTurn()){
+    calculateRoundResult(d);
   }
 }
 
 async function onTimeout(q){
-  if(!isTurn()) return;
+  if(answerBusy) return;
+  answerBusy=true;
+  clearInterval(timerIv);
   document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
   SFX.se('timeout');
-  flashDmg();
-  spawnFloat('-10',true,'#f5a623');
-  spawnFloat('-10',false,'#f5a623');
-  const newMyHp=Math.max(0,myS().hp-10);
-  const newEnHp=Math.max(0,enS().hp-10);
-  log('⏰ じかんぎれ！ りょうしゃに10ダメージ！');
+  log('⏰ じかんぎれ！ こうげきできなかった…');
+  spawnFloat('⏰',true,'#f5a623');
+  await roomRef.update({[`roundAnswer/${mySlot}`]:false});
+  const snap=await roomRef.once('value');const d=snap.val();
+  if(d.roundAnswer&&d.roundAnswer.p1!==null&&d.roundAnswer.p2!==null&&isTurn()){
+    calculateRoundResult(d);
+  }
+}
+
+async function calculateRoundResult(d){
+  if(d.winner||d.phase==='ended') return;
+  const myCorrect=d.roundAnswer[mySlot];
+  const enCorrect=d.roundAnswer[enSlot()];
+  const mw=WAZA.find(x=>x.id===d.waza?.[mySlot])||WAZA[0];
+  const ew=WAZA.find(x=>x.id===d.waza?.[enSlot()])||WAZA[0];
+  const myChar=charById(d.charChoice?.[mySlot]);
+  const enChar=charById(d.charChoice?.[enSlot()]);
+  const updates={};
+  let msgs=[];
+
+  // 自分の攻撃
+  let enDmg=0;
+  if(myCorrect){
+    let dmg=mw.dmg;
+    if(ew.id==='barrier') dmg=Math.floor(dmg/2);
+    const typeMult=getTypeMultiplier(myChar.type,enChar.type);
+    dmg=Math.round(dmg*typeMult);
+    const isCrit=Math.random()<0.1;
+    if(isCrit) dmg=Math.round(dmg*1.5);
+    enDmg=dmg;
+    let msg=`✅ ${myName}`;
+    if(typeMult>=2) msg+=` 🔥ばつぐん！`;
+    if(isCrit) msg+=` 💥CRITICAL！`;
+    msg+=` ${dmg}ダメ！`;
+    msgs.push(msg);
+    if(mw.status) updates[`status/${enSlot()}`]=mw.status;
+    let exp=d[mySlot].exp+3,lv=d[mySlot].lv;
+    while(exp>=expNeeded(lv)&&lv<100){exp-=expNeeded(lv);lv++;}
+    if(lv>d[mySlot].lv) setTimeout(()=>{lvUpEffect(true);SFX.se('levelup');},800);
+    updates[`${mySlot}/exp`]=exp; updates[`${mySlot}/lv`]=lv;
+  } else {
+    msgs.push(`❌ ${myName}まちがい`);
+  }
+
+  // 相手の攻撃
+  let myDmg=0;
+  if(enCorrect){
+    let dmg=ew.dmg;
+    if(mw.id==='barrier') dmg=Math.floor(dmg/2);
+    const typeMult=getTypeMultiplier(enChar.type,myChar.type);
+    dmg=Math.round(dmg*typeMult);
+    const isCrit=Math.random()<0.1;
+    if(isCrit) dmg=Math.round(dmg*1.5);
+    myDmg=dmg;
+    let msg=`⚔️ ${d[enSlot()].name}`;
+    if(typeMult>=2) msg+=` 🔥ばつぐん！`;
+    if(isCrit) msg+=` 💥CRITICAL！`;
+    msg+=` ${dmg}ダメ！`;
+    msgs.push(msg);
+    if(ew.status) updates[`status/${mySlot}`]=ew.status;
+  } else {
+    msgs.push(`✨ ${d[enSlot()].name}もまちがい！まぬがれた！`);
+  }
+
+  // アニメーション
+  if(enDmg>0){
+    attackCanvas('playerCanvas');
+    setTimeout(()=>{flashCanvas('enemyCanvas',true);SFX.se('damage');spawnFloat(`-${enDmg}`,false,'#e94560');},300);
+  }
+  if(myDmg>0){
+    setTimeout(()=>{flashCanvas('playerCanvas',false);flashDmg();SFX.se('damage');spawnFloat(`-${myDmg}`,true,'#e94560');},enDmg>0?650:300);
+  }
+
+  // HP更新・勝敗
+  const newMyHp=Math.max(0,d[mySlot].hp-myDmg);
+  const newEnHp=Math.max(0,d[enSlot()].hp-enDmg);
+  updates[`${mySlot}/hp`]=newMyHp;
+  updates[`${enSlot()}/hp`]=newEnHp;
   const won=newEnHp<=0?mySlot:newMyHp<=0?enSlot():null;
-  await roomRef.update({[`${mySlot}/hp`]:newMyHp,[`${enSlot()}/hp`]:newEnHp,phase:won?'ended':'roundEnd',winner:won||null,turn:enSlot(),roundResult:{winner:null,damage:10}});
+  updates.phase=won?'ended':'roundEnd';
+  if(won) updates.winner=won;
+  updates.turn=enSlot();
+
+  log(msgs.join(' ／ '));
+  await roomRef.update(updates);
   if(!won) setTimeout(()=>nextRound(),2200);
 }
 
@@ -1440,7 +1459,7 @@ async function nextRound(){
   const snap=await roomRef.once('value');
   const d=snap.val();
   if(!d||d.winner) return;
-  const updates={phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null,wrongAnswers:null};
+  const updates={phase:'waza','waza/p1':null,'waza/p2':null,'questions/p1':null,'questions/p2':null,'roundAnswer/p1':null,'roundAnswer/p2':null,roundResult:null};
   // 毒ダメージ（isTurnのプレイヤーが管理）
   if(isTurn()){
     for(const sl of['p1','p2']){
