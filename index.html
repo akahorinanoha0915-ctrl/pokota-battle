@@ -547,20 +547,22 @@ const WAZA=[
 
 // キャラクター定義
 const CHARS=[
-  {id:"goblin",      name:"ゴブリン",   icon:"☠️", type:"poison", typeName:"どく",   unlockLv:1,  drawFn:drawGoblin},
-  {id:"swordsman",   name:"けんし",     icon:"🔥", type:"fire",   typeName:"ほのお", unlockLv:5,  drawFn:drawSwordsman},
-  {id:"knight",      name:"きし",       icon:"🔩", type:"steel",  typeName:"はがね", unlockLv:10, drawFn:drawKnight},
-  {id:"dragonknight",name:"りゅうきし", icon:"🐉", type:"dragon", typeName:"ドラゴン",unlockLv:15,drawFn:drawDragonKnight},
-  {id:"demonking",   name:"まおう",     icon:"🌑", type:"dark",   typeName:"やみ",   unlockLv:20, drawFn:drawDemonKing},
+  {id:"goblin",      name:"ゴブリン",   icon:"🌿", type:"grass",    typeName:"くさ",   unlockLv:1,  drawFn:drawGoblin},
+  {id:"swordsman",   name:"けんし",     icon:"🔥", type:"fire",     typeName:"ほのお", unlockLv:5,  drawFn:drawSwordsman},
+  {id:"knight",      name:"きし",       icon:"💧", type:"water",    typeName:"みず",   unlockLv:10, drawFn:drawKnight},
+  {id:"dragonknight",name:"りゅうきし", icon:"⚡", type:"electric", typeName:"でんき", unlockLv:15, drawFn:drawDragonKnight},
+  {id:"demonking",   name:"まおう",     icon:"🌑", type:"dark",     typeName:"やみ",   unlockLv:20, drawFn:drawDemonKing},
 ];
 
 // タイプ相性 [攻撃タイプ][防御タイプ] → 倍率
+// ほのお→くさ→みず→ほのお（3すくみ）
+// でんき→みず、やみ→でんき、ほのお→やみ
 const TYPE_CHART={
-  poison: {poison:1.0, fire:0.5, steel:0.5, dragon:2.0, dark:1.0},
-  fire:   {poison:2.0, fire:1.0, steel:0.5, dragon:0.5, dark:2.0},
-  steel:  {poison:2.0, fire:2.0, steel:1.0, dragon:0.5, dark:0.5},
-  dragon: {poison:1.0, fire:2.0, steel:2.0, dragon:1.0, dark:0.5},
-  dark:   {poison:0.5, fire:0.5, steel:2.0, dragon:2.0, dark:1.0},
+  grass:    {grass:1.0, fire:0.5, water:2.0, electric:1.0, dark:1.0},
+  fire:     {grass:2.0, fire:1.0, water:0.5, electric:1.0, dark:2.0},
+  water:    {grass:0.5, fire:2.0, water:1.0, electric:0.5, dark:1.0},
+  electric: {grass:1.0, fire:1.0, water:2.0, electric:1.0, dark:0.5},
+  dark:     {grass:1.0, fire:0.5, water:1.0, electric:2.0, dark:1.0},
 };
 
 function getTypeMultiplier(atkType, defType){
