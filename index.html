@@ -126,7 +126,7 @@ input[type=text]:focus{border-color:var(--green);}
 .mute-btn:hover{border-color:var(--green);}
 
 /* WAZA */
-.waza-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.waza-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
 .waza-btn{background:var(--card);border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'DotGothic16',monospace;font-size:.75rem;padding:9px 6px;cursor:pointer;text-align:center;line-height:1.5;transition:all .12s;display:flex;flex-direction:column;align-items:center;gap:2px;}
 .waza-btn:hover:not(:disabled){border-color:var(--gold);transform:translateY(-1px);}
 .waza-btn:disabled{opacity:.28;cursor:not-allowed;}
@@ -161,6 +161,20 @@ input[type=text]:focus{border-color:var(--green);}
 .result-win{color:var(--gold);text-shadow:0 0 32px rgba(245,166,35,.6);}
 .result-lose{color:var(--red);text-shadow:0 0 32px rgba(233,69,96,.6);}
 
+/* CHAR SELECT */
+.char-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;}
+.char-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:'DotGothic16',monospace;padding:8px 4px;cursor:pointer;text-align:center;transition:all .12s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.char-btn:hover:not(:disabled){border-color:var(--gold);transform:translateY(-1px);}
+.char-btn:disabled{opacity:.3;cursor:not-allowed;}
+.char-btn.sel{border-color:var(--green);background:rgba(78,204,163,.12);}
+.char-canvas{image-rendering:pixelated;width:60px;height:60px;border-radius:8px;background:#050410;}
+.char-name{font-size:.65rem;color:var(--gold);}
+.char-type{font-size:.55rem;color:var(--muted);}
+.type-badge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:.58rem;font-weight:bold;margin-left:4px;}
+.status-badge{font-size:.68rem;padding:2px 6px;border-radius:4px;margin-left:4px;}
+.status-poison{background:#4a0a6a;color:#d070ff;}
+.status-para{background:#5a5000;color:#ffe020;}
+
 /* DAMAGE FLASH */
 .dmg-flash{position:fixed;inset:0;pointer-events:none;border:0px solid transparent;z-index:100;transition:border .04s;}
 .dmg-flash.hit{border:9px solid rgba(233,69,96,.7);}
@@ -174,7 +188,7 @@ input[type=text]:focus{border-color:var(--green);}
 <!-- TITLE -->
 <div class="screen active" id="screenTitle">
   <div class="logo">⚔️ぽこたん<em>バトル</em>⚔️</div>
-  <canvas id="titleCanvas" width="24" height="24" style="image-rendering:pixelated;width:96px;height:96px;border:2px solid #3a2a7a;border-radius:12px;background:#050410;margin:4px auto"></canvas>
+  <canvas id="titleCanvas" width="48" height="48" style="image-rendering:pixelated;width:96px;height:96px;border:2px solid #3a2a7a;border-radius:12px;background:#050410;margin:4px auto"></canvas>
   <div class="panel">
     <div class="panel-title">👤 なまえをいれよう</div>
     <input type="text" id="inputName" placeholder="ぷれいやーなまえ" maxlength="10" oninput="updateSaveInfo(this.value.trim())">
@@ -213,6 +227,19 @@ input[type=text]:focus{border-color:var(--green);}
   <button class="btn btn-muted" onclick="cancelRoom()">キャンセル</button>
 </div>
 
+<!-- CHAR SELECT -->
+<div class="screen" id="screenCharSelect">
+  <div class="logo" style="font-size:1.4rem;margin-top:16px">⚔️ キャラをえらぼう</div>
+  <div class="panel" style="text-align:center">
+    <div class="panel-title" id="charSelectTitle">どのキャラでたたかう？</div>
+    <div class="char-grid" id="charGrid"></div>
+  </div>
+  <div id="charSelectMsg" class="msg" style="margin-top:4px"></div>
+  <div class="panel" style="text-align:center;padding:8px">
+    <div style="font-size:.7rem;color:var(--muted)" id="typeChartHint">タイプ相性: 得意なタイプのあいてには2ばいダメージ！</div>
+  </div>
+</div>
+
 <!-- BATTLE -->
 <div class="screen" id="screenBattle">
   <div class="battle-field" id="battleField">
@@ -222,8 +249,8 @@ input[type=text]:focus{border-color:var(--green);}
       <div class="sp-name"><span id="enemyName">てき</span><span class="sp-lv" id="enemyLv">LV.1</span></div>
       <div class="hp-row"><span class="hp-lbl">HP</span><div class="hp-track"><div class="hp-fill" id="enemyHpFill" style="width:100%;background:var(--green)"></div></div></div>
     </div>
-    <canvas class="spr spr-en" id="enemyCanvas" width="24" height="24"></canvas>
-    <canvas class="spr spr-pl" id="playerCanvas" width="24" height="24"></canvas>
+    <canvas class="spr spr-en" id="enemyCanvas" width="48" height="48"></canvas>
+    <canvas class="spr spr-pl" id="playerCanvas" width="48" height="48"></canvas>
     <div class="sp sp-pl">
       <div class="sp-name"><span id="playerName">あなた</span><span class="sp-lv" id="playerLv">LV.1</span></div>
       <div class="hp-row"><span class="hp-lbl">HP</span><div class="hp-track"><div class="hp-fill" id="playerHpFill" style="width:100%;background:var(--green)"></div></div><span class="hp-nums" id="playerHpNums">100/100</span></div>
@@ -262,7 +289,7 @@ input[type=text]:focus{border-color:var(--green);}
 <!-- RESULT -->
 <div class="screen" id="screenResult">
   <div class="result-title" id="resultTitle">WIN!</div>
-  <canvas id="resultCanvas" width="24" height="24" style="image-rendering:pixelated;width:120px;height:120px;border:2px solid #3a2a7a;border-radius:12px;background:#050410;margin:8px auto"></canvas>
+  <canvas id="resultCanvas" width="48" height="48" style="image-rendering:pixelated;width:120px;height:120px;border:2px solid #3a2a7a;border-radius:12px;background:#050410;margin:8px auto"></canvas>
   <div class="panel" style="text-align:center">
     <div id="resultMsg" style="font-size:.85rem;line-height:2"></div>
   </div>
@@ -510,98 +537,532 @@ const CATEGORIES=[
 ];
 
 const WAZA=[
-  {id:"normal", name:"ノーマル", icon:"⚔️",unlockLv:1, desc:"ふつうのこうげき",  dmg:20},
-  {id:"attack", name:"アタック", icon:"💥",unlockLv:20,desc:"ダメージ2ばい！",   dmg:40},
-  {id:"barrier",name:"バリア",   icon:"🛡️",unlockLv:40,desc:"うけるダメージ半分",dmg:20},
-  {id:"speed",  name:"スピード", icon:"⚡",unlockLv:60,desc:"タイマー+5びょう",  dmg:20},
-  {id:"gamble", name:"ギャンブル",icon:"🎲",unlockLv:80,desc:"かち→3倍 まけ→2倍",dmg:60},
+  {id:"normal", name:"ノーマル", icon:"⚔️",unlockLv:1, desc:"ふつうのこうげき",     dmg:20, status:null},
+  {id:"attack", name:"アタック", icon:"💥",unlockLv:3, desc:"ダメージ2ばい！",      dmg:40, status:null},
+  {id:"barrier",name:"バリア",   icon:"🛡️",unlockLv:6, desc:"うけるダメージ半分",  dmg:20, status:null},
+  {id:"para",   name:"まひ",     icon:"⚡",unlockLv:8, desc:"相手タイマー半減！",   dmg:10, status:"para"},
+  {id:"poison", name:"どく",     icon:"☠️",unlockLv:12,desc:"毒！毎ターン-5",       dmg:15, status:"poison"},
+  {id:"gamble", name:"ギャンブル",icon:"🎲",unlockLv:15,desc:"かち→3倍 まけ→2倍",  dmg:60, status:null},
 ];
 
+// キャラクター定義
+const CHARS=[
+  {id:"goblin",      name:"ゴブリン",   icon:"☠️", type:"poison", typeName:"どく",   unlockLv:1,  drawFn:drawGoblin},
+  {id:"swordsman",   name:"けんし",     icon:"🔥", type:"fire",   typeName:"ほのお", unlockLv:5,  drawFn:drawSwordsman},
+  {id:"knight",      name:"きし",       icon:"🔩", type:"steel",  typeName:"はがね", unlockLv:10, drawFn:drawKnight},
+  {id:"dragonknight",name:"りゅうきし", icon:"🐉", type:"dragon", typeName:"ドラゴン",unlockLv:15,drawFn:drawDragonKnight},
+  {id:"demonking",   name:"まおう",     icon:"🌑", type:"dark",   typeName:"やみ",   unlockLv:20, drawFn:drawDemonKing},
+];
+
+// タイプ相性 [攻撃タイプ][防御タイプ] → 倍率
+const TYPE_CHART={
+  poison: {poison:1.0, fire:0.5, steel:0.5, dragon:2.0, dark:1.0},
+  fire:   {poison:2.0, fire:1.0, steel:0.5, dragon:0.5, dark:2.0},
+  steel:  {poison:2.0, fire:2.0, steel:1.0, dragon:0.5, dark:0.5},
+  dragon: {poison:1.0, fire:2.0, steel:2.0, dragon:1.0, dark:0.5},
+  dark:   {poison:0.5, fire:0.5, steel:2.0, dragon:2.0, dark:1.0},
+};
+
+function getTypeMultiplier(atkType, defType){
+  return (TYPE_CHART[atkType]||{})[defType]||1.0;
+}
+function charById(id){ return CHARS.find(c=>c.id===id)||CHARS[0]; }
+function drawCharId(cv,id){ charById(id).drawFn(cv); }
+
 // ══════════════════════════════════════════
-//  PIXEL ART
+//  PIXEL ART (48×48 RPGキャラ)
 // ══════════════════════════════════════════
-function px(c,x,y,col,s){c.fillStyle=col;c.fillRect(x*s,y*s,s,s);}
+function px(c,x,y,col,s){if(x<0||x>47||y<0||y>47)return;c.fillStyle=col;c.fillRect(x*s,y*s,s,s);}
+function row(c,y,x1,x2,col,s){for(let x=x1;x<=x2;x++)px(c,x,y,col,s);}
+function col_(c,x,y1,y2,col,s){for(let y=y1;y<=y2;y++)px(c,x,y,col,s);}
+function rect(c,x1,y1,x2,y2,col,s){for(let y=y1;y<=y2;y++)row(c,y,x1,x2,col,s);}
 
-function drawHiyoko(cv){
-  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
-  [[9,6],[10,6],[11,6],[12,6],[13,6],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[9,9],[10,9],[11,9],[12,9],[13,9],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[11,4],[12,4],[11,5],[12,5],[13,5]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
-  [[6,11],[6,12],[6,13],[16,11],[16,12],[16,13]].forEach(([x,y])=>px(c,x,y,'#e8b800',s));
-  px(c,11,8,'#e8820c',s);px(c,12,8,'#e8820c',s);
-  px(c,10,7,'#1a0a00',s);px(c,13,7,'#1a0a00',s);
-  px(c,10,7,'#fff',s);px(c,13,7,'#fff',s); // eye shine - actually dark
-  px(c,10,7,'#1a0a00',s);px(c,13,7,'#1a0a00',s);
-  px(c,9,9,'#f4a0a0',s);px(c,14,9,'#f4a0a0',s);
-  [[9,15],[10,15],[11,15],[12,15],[13,15],[9,16],[13,16]].forEach(([x,y])=>px(c,x,y,'#e8820c',s));
+// ゴブリン（LV1-4）
+function drawGoblin(cv){
+  const c=cv.getContext('2d'),s=cv.width/48;c.clearRect(0,0,cv.width,cv.height);
+  const G='#5aaa30',DG='#2a6a10',OR='#ff8800',WH='#ffffff',
+        BR='#7a5010',DBR='#3a2008',DK='#0a0800',PK='#f4a0a0',SK='#f0c890';
+
+  // 耳（左）
+  [[10,10],[11,10],[12,10],[10,11],[11,11],[12,11],[13,11],
+   [10,12],[11,12],[12,12],[13,12],[14,12],[11,13],[12,13],[13,13],[14,13],[12,14],[13,14]]
+  .forEach(([x,y])=>px(c,x,y,G,s));
+  px(c,11,11,PK,s);px(c,12,12,PK,s);px(c,11,13,PK,s);
+
+  // 耳（右）
+  [[38,10],[37,10],[36,10],[38,11],[37,11],[36,11],[35,11],
+   [38,12],[37,12],[36,12],[35,12],[34,12],[37,13],[36,13],[35,13],[34,13],[36,14],[35,14]]
+  .forEach(([x,y])=>px(c,x,y,G,s));
+  px(c,37,11,PK,s);px(c,36,12,PK,s);px(c,37,13,PK,s);
+
+  // 頭
+  rect(c,14,8,34,22,G,s);
+  row(c,8,18,30,G,s);row(c,9,16,32,G,s);row(c,22,17,31,G,s);row(c,23,18,30,G,s);
+  // 頭の陰影（右側）
+  for(let y=10;y<=20;y++)col_(c,33,y,y,DG,s);
+  for(let y=10;y<=20;y++)col_(c,32,y,y,DG,s);
+
+  // 目（左）白目
+  rect(c,16,13,22,16,WH,s);
+  // 目（左）虹彩
+  rect(c,17,13,21,16,OR,s);
+  // 目（左）瞳
+  rect(c,18,14,20,15,DK,s);
+  px(c,17,13,WH,s); // 輝き
+
+  // 目（右）白目
+  rect(c,26,13,32,16,WH,s);
+  // 目（右）虹彩
+  rect(c,27,13,31,16,OR,s);
+  // 目（右）瞳
+  rect(c,29,14,30,15,DK,s);
+  px(c,27,13,WH,s); // 輝き
+
+  // 眉毛（ひそめた感じ）
+  row(c,12,15,22,DK,s);row(c,12,26,33,DK,s);
+  px(c,15,11,DK,s);px(c,33,11,DK,s);
+
+  // 鼻
+  row(c,18,21,27,G,s);px(c,20,19,DG,s);px(c,21,19,DG,s);px(c,26,19,DG,s);px(c,27,19,DG,s);
+
+  // 口（ニヤリ、牙あり）
+  row(c,20,18,30,DK,s);px(c,17,21,DK,s);px(c,31,21,DK,s);
+  row(c,20,20,22,WH,s);row(c,20,26,28,WH,s); // 歯
+  px(c,19,21,WH,s);px(c,20,22,WH,s); // 左牙
+  px(c,29,21,WH,s);px(c,28,22,WH,s); // 右牙
+
+  // 体（茶色のチョッキ）
+  rect(c,15,24,33,37,BR,s);
+  rect(c,16,23,32,24,BR,s);
+  // チョッキのライン
+  col_(c,23,24,37,'#a07020',s);col_(c,24,24,37,'#a07020',s);
+  // バックル
+  rect(c,21,30,27,33,'#c09020',s);rect(c,22,31,26,32,DK,s);
+
+  // 腕（左）緑
+  rect(c,7,23,14,34,G,s);
+  for(let y=23;y<=34;y++)px(c,7,y,DG,s);
+  rect(c,6,33,14,37,G,s); // 手
+
+  // 腕（右）緑
+  rect(c,34,23,41,34,G,s);
+  for(let y=23;y<=34;y++)px(c,41,y,DG,s);
+  rect(c,34,33,42,37,G,s); // 手
+
+  // 棍棒（右手側）
+  col_(c,43,12,40,BR,s);col_(c,44,12,40,BR,s); // 柄
+  rect(c,40,5,47,13,DBR,s); // 頭（大きめ）
+  rect(c,41,6,46,12,'#5a3010',s); // 頭ハイライト
+  // スパイク
+  px(c,39,6,DBR,s);px(c,38,7,DBR,s);
+  px(c,48>47?47:47,6,DBR,s);px(c,47,7,DBR,s);
+  px(c,42,4,DBR,s);px(c,43,4,DBR,s);px(c,42,3,DBR,s);px(c,43,3,DBR,s);
+  px(c,44,6,'#c09030',s); // 金の飾り
+
+  // 足（左）
+  rect(c,15,38,23,46,G,s);
+  for(let y=38;y<=46;y++)px(c,15,y,DG,s);
+  // 足（右）
+  rect(c,25,38,33,46,G,s);
+  for(let y=38;y<=46;y++)px(c,33,y,DG,s);
+  // 靴（左）
+  rect(c,13,45,24,47,DBR,s);
+  // 靴（右）
+  rect(c,24,45,35,47,DBR,s);
 }
 
-function drawUsagi(cv){
-  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
-  [[10,2],[11,2],[10,3],[11,3],[10,4],[11,4],[10,5],[11,5],[13,2],[14,2],[13,3],[14,3],[13,4],[14,4],[13,5],[14,5]].forEach(([x,y])=>px(c,x,y,'#f0e0ff',s));
-  [[10,3],[11,3],[10,4],[11,4],[13,3],[14,3],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f4a0c0',s));
-  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[15,14]].forEach(([x,y])=>px(c,x,y,'#f5f0ff',s));
-  [[10,12],[11,12],[12,12],[13,12],[10,13],[11,13],[12,13],[13,13]].forEach(([x,y])=>px(c,x,y,'#ffe0f0',s));
-  px(c,10,7,'#3a0a5a',s);px(c,14,7,'#3a0a5a',s);
-  px(c,11,7,'#fff',s);px(c,15,7,'#fff',s);
-  px(c,10,7,'#3a0a5a',s);px(c,14,7,'#3a0a5a',s);
-  px(c,12,9,'#f4a0c0',s);
-  [[9,15],[10,15],[11,15],[13,15],[14,15],[15,15],[9,16],[10,16],[13,16],[14,16]].forEach(([x,y])=>px(c,x,y,'#f5f0ff',s));
-  px(c,17,12,'#fff',s);px(c,17,13,'#fff',s);
+// 剣士（LV5-9）
+function drawSwordsman(cv){
+  const c=cv.getContext('2d'),s=cv.width/48;c.clearRect(0,0,cv.width,cv.height);
+  const RED='#cc2020',DRED='#881010',GOLD='#d0a020',DGOLD='#806000',
+        SKIN='#f0c890',DSKIN='#c09060',HAIR='#3a1800',
+        SIL='#c8c8d0',DSIL='#707080',WH='#ffffff',DK='#0a0808',
+        BL='#3060c0',DBL='#102060';
+
+  // 髪
+  rect(c,14,4,34,10,HAIR,s);
+  row(c,4,18,30,HAIR,s);row(c,5,16,32,HAIR,s);row(c,10,15,33,HAIR,s);
+  // 横髪
+  for(let y=11;y<=22;y++){px(c,13,y,HAIR,s);px(c,14,y,HAIR,s);}
+  for(let y=11;y<=22;y++){px(c,34,y,HAIR,s);px(c,35,y,HAIR,s);}
+
+  // 顔
+  rect(c,15,6,33,22,SKIN,s);
+  row(c,6,19,29,SKIN,s);row(c,7,17,31,SKIN,s);row(c,22,17,31,SKIN,s);row(c,23,19,29,SKIN,s);
+
+  // 目（左）
+  rect(c,17,12,22,15,WH,s);
+  rect(c,18,12,21,15,BL,s);
+  rect(c,19,13,20,14,DK,s);
+  px(c,18,12,WH,s);
+  // 目（右）
+  rect(c,26,12,31,15,WH,s);
+  rect(c,27,12,30,15,BL,s);
+  rect(c,28,13,29,14,DK,s);
+  px(c,27,12,WH,s);
+
+  // 鼻・口
+  px(c,23,17,DSKIN,s);px(c,24,17,DSKIN,s);
+  px(c,22,18,DSKIN,s);px(c,25,18,DSKIN,s);
+  row(c,20,20,28,DSKIN,s);
+  row(c,21,21,27,RED,s); // 唇
+
+  // 体（赤いコート）
+  rect(c,14,24,34,40,RED,s);
+  rect(c,15,23,33,24,RED,s);
+  for(let y=24;y<=40;y++){px(c,14,y,DRED,s);px(c,34,y,DRED,s);}
+  // コートの金ボタン列
+  col_(c,23,24,40,DGOLD,s);col_(c,24,24,40,DGOLD,s);
+  // 胸の紋章（金の盾）
+  rect(c,17,25,22,30,GOLD,s);
+  rect(c,18,26,21,29,DRED,s);
+  row(c,27,19,20,GOLD,s); // 星の縦
+  col_(c,19,26,28,GOLD,s); // 星の横
+
+  // 腕（左）赤
+  rect(c,7,24,14,36,RED,s);
+  for(let y=24;y<=36;y++)px(c,7,y,DRED,s);
+  // カフス（金）
+  rect(c,6,35,14,38,GOLD,s);
+  // 手（左）
+  rect(c,7,37,13,41,SKIN,s);
+
+  // 腕（右）赤
+  rect(c,34,24,43,36,RED,s);
+  for(let y=24;y<=36;y++)px(c,43,y,DRED,s);
+  // カフス（金）
+  rect(c,34,35,44,38,GOLD,s);
+  // 手（右）
+  rect(c,35,37,43,41,SKIN,s);
+
+  // 剣（右手の横）
+  col_(c,45,2,42,SIL,s);col_(c,46,2,42,SIL,s); // 刃
+  for(let y=3;y<=41;y++)px(c,45,y,WH,s); // ハイライト
+  px(c,45,1,SIL,s); // 先端
+  // 鍔（金）
+  rect(c,41,38,47,41,GOLD,s);
+  rect(c,42,39,46,40,DGOLD,s);
+  // 柄
+  rect(c,43,41,47,46,DGOLD,s);
+  rect(c,42,46,47,48,GOLD,s); // 柄頭
+
+  // 足（ズボン）
+  rect(c,15,40,22,46,DBL,s);
+  rect(c,26,40,33,46,DBL,s);
+  // ブーツ
+  rect(c,13,45,23,47,DGOLD,s);
+  rect(c,25,45,35,47,DGOLD,s);
 }
 
-function drawKitsune(cv){
-  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
-  [[9,3],[10,3],[9,4],[10,4],[9,5],[10,5],[13,3],[14,3],[13,4],[14,4],[13,5],[14,5]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
-  [[9,4],[10,4],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f4a0a0',s));
-  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
-  [[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[10,9],[11,9],[12,9],[13,9],[10,11],[11,11],[12,11],[13,11],[10,12],[11,12],[12,12],[13,12]].forEach(([x,y])=>px(c,x,y,'#f5e0c0',s));
-  px(c,9,7,'#2a1000',s);px(c,15,7,'#2a1000',s);
-  px(c,12,9,'#a03010',s);
-  [[6,8],[7,8],[17,8],[18,8]].forEach(([x,y])=>px(c,x,y,'#c05010',s));
-  [[17,10],[18,10],[19,10],[17,11],[18,11],[19,11],[17,12],[18,12],[19,12],[18,13],[19,13]].forEach(([x,y])=>px(c,x,y,'#e86820',s));
-  [[18,10],[19,10],[18,11],[19,11],[19,12]].forEach(([x,y])=>px(c,x,y,'#fff',s));
-  [[8,14],[9,14],[14,14],[15,14],[8,15],[9,15],[14,15],[15,15]].forEach(([x,y])=>px(c,x,y,'#c05010',s));
+// 騎士（LV10-14）
+function drawKnight(cv){
+  const c=cv.getContext('2d'),s=cv.width/48;c.clearRect(0,0,cv.width,cv.height);
+  const AR='#8090b0',DAR='#404858',LAR='#c0d0e8',
+        GOLD='#d0a020',DGOLD='#806000',
+        BLUE='#3060c0',DBLUE='#102060',
+        SIL='#d0d0d8',WH='#ffffff',DK='#080808',
+        RED='#cc2020',SKN='#f0c890';
+
+  // 兜の羽飾り
+  for(let y=0;y<=5;y++){col_(c,22,y,y,'#4060ff',s);col_(c,23,y,y,'#6080ff',s);col_(c,24,y,y,'#4060ff',s);}
+  rect(c,21,3,26,6,BLUE,s);
+
+  // 兜
+  rect(c,14,6,34,22,AR,s);
+  row(c,6,18,30,AR,s);row(c,7,16,32,AR,s);row(c,22,17,31,AR,s);
+  // 兜のハイライト
+  for(let y=7;y<=15;y++)for(let x=16;x<=20;x++)px(c,x,y,LAR,s);
+  // 目スリット
+  rect(c,15,13,33,16,DK,s);
+  rect(c,16,13,22,16,DBLUE,s);
+  rect(c,26,13,32,16,DBLUE,s);
+  // 目の光
+  px(c,17,13,BLUE,s);px(c,18,13,BLUE,s);
+  px(c,27,13,BLUE,s);px(c,28,13,BLUE,s);
+  // 兜の縁（金）
+  row(c,22,14,34,GOLD,s);
+  row(c,6,18,30,GOLD,s);
+
+  // 鎧の体
+  rect(c,13,23,35,40,AR,s);
+  rect(c,14,22,34,23,AR,s);
+  for(let y=23;y<=40;y++){px(c,13,y,DAR,s);px(c,35,y,DAR,s);}
+  // 鎧のハイライト
+  for(let y=23;y<=35;y++)for(let x=15;x<=19;x++)px(c,x,y,LAR,s);
+  // 胸の十字紋章（金）
+  col_(c,23,24,38,GOLD,s);col_(c,24,24,38,GOLD,s);
+  row(c,30,14,34,GOLD,s);
+  // 腰の帯
+  rect(c,13,37,35,40,DGOLD,s);
+  for(let y=37;y<=40;y++){px(c,13,y,GOLD,s);px(c,35,y,GOLD,s);}
+
+  // 左腕（鎧）
+  rect(c,7,23,14,38,AR,s);
+  for(let y=23;y<=38;y++){px(c,7,y,DAR,s);}
+  // 肩板（左）
+  rect(c,6,22,14,25,GOLD,s);
+  // 手甲（左）
+  rect(c,7,36,14,40,DGOLD,s);
+  // 手（左）
+  rect(c,8,39,14,43,AR,s);
+
+  // 右腕（鎧）- 盾あり
+  rect(c,34,23,41,38,AR,s);
+  for(let y=23;y<=38;y++)px(c,41,y,DAR,s);
+  // 肩板（右）
+  rect(c,34,22,43,25,GOLD,s);
+  // 手甲（右）
+  rect(c,34,36,41,40,DGOLD,s);
+  // 手（右）
+  rect(c,34,39,40,43,AR,s);
+
+  // 盾（左側に）
+  rect(c,3,24,11,42,BLUE,s);
+  rect(c,4,23,10,43,DBLUE,s);
+  row(c,23,4,10,GOLD,s);row(c,43,4,10,GOLD,s);
+  col_(c,3,23,43,GOLD,s);col_(c,11,23,43,GOLD,s);
+  // 盾の紋章（金の十字）
+  col_(c,7,26,40,GOLD,s);row(c,33,4,10,GOLD,s);
+  rect(c,5,32,9,34,GOLD,s);
+
+  // 剣（右手側）
+  col_(c,44,3,40,SIL,s);col_(c,45,3,40,SIL,s);
+  for(let y=4;y<=39;y++)px(c,44,y,WH,s);
+  px(c,44,2,SIL,s);
+  // 剣鍔
+  rect(c,41,37,47,40,GOLD,s);
+  // 柄
+  rect(c,43,40,46,46,DGOLD,s);
+  rect(c,41,45,47,47,GOLD,s);
+
+  // 足（鎧）
+  rect(c,14,40,22,47,AR,s);
+  rect(c,26,40,34,47,AR,s);
+  for(let y=40;y<=47;y++){px(c,14,y,DAR,s);px(c,22,y,DAR,s);px(c,26,y,DAR,s);px(c,34,y,DAR,s);}
+  // 足首（金）
+  rect(c,13,45,23,47,DGOLD,s);
+  rect(c,25,45,35,47,DGOLD,s);
 }
 
-function drawOokami(cv){
-  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
-  [[8,3],[9,3],[8,4],[9,4],[8,5],[9,5],[14,3],[15,3],[13,4],[14,4],[15,4],[14,5],[15,5]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
-  [[9,4],[9,5],[14,4],[14,5]].forEach(([x,y])=>px(c,x,y,'#f4a0a0',s));
-  [[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[6,11],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],[5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12],[5,13],[6,13],[7,13],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13],[17,13],[18,13],[6,14],[7,14],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[15,14],[16,14],[17,14]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
-  [[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[10,12],[11,12],[12,12],[13,12],[10,13],[11,13],[12,13],[13,13]].forEach(([x,y])=>px(c,x,y,'#b8c0d8',s));
-  px(c,9,7,'#1a2030',s);px(c,15,7,'#1a2030',s);
-  px(c,9,8,'#3050ff',s);px(c,15,8,'#3050ff',s);
-  px(c,11,10,'#303050',s);px(c,12,10,'#303050',s);
-  px(c,16,7,'#e86060',s);px(c,17,8,'#e86060',s);
-  [[18,11],[19,11],[20,11],[18,12],[19,12],[20,12],[18,13],[19,13],[20,13],[19,14],[20,14]].forEach(([x,y])=>px(c,x,y,'#7888aa',s));
-  [[20,11],[20,12],[20,13]].forEach(([x,y])=>px(c,x,y,'#b8c0d8',s));
-  [[7,15],[8,15],[14,15],[15,15],[7,16],[8,16],[14,16],[15,16]].forEach(([x,y])=>px(c,x,y,'#606880',s));
+// 竜騎士（LV15-19）
+function drawDragonKnight(cv){
+  const c=cv.getContext('2d'),s=cv.width/48;c.clearRect(0,0,cv.width,cv.height);
+  const PU='#7020c0',DPU='#380860',LPU='#c060ff',
+        GOLD='#d0a020',DGOLD='#806000',
+        WN='#0a0815',WNM='#301050', // 翼の本体・膜
+        HORN='#c08020',
+        RED='#ff2020',DK='#080808',WH='#ffffff',
+        SIL='#c8c8d0',DSIL='#606070';
+
+  // 翼（左）
+  rect(c,0,10,10,38,WN,s);
+  rect(c,2,12,8,36,WNM,s);
+  // 翼の骨格
+  col_(c,0,10,38,WN,s);
+  for(let y=10;y<=38;y+=4)row(c,y,0,10,WN,s);
+  // 翼先
+  [[0,8],[1,8],[0,9],[0,10]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[0,36],[1,36],[0,37],[1,37],[0,38]].forEach(([x,y])=>px(c,x,y,WN,s));
+
+  // 翼（右）
+  rect(c,38,10,47,38,WN,s);
+  rect(c,40,12,46,36,WNM,s);
+  col_(c,47,10,38,WN,s);
+  [[47,8],[46,8],[47,9],[47,10]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[47,36],[46,36],[47,37],[46,37],[47,38]].forEach(([x,y])=>px(c,x,y,WN,s));
+
+  // ドラゴンの角（左）
+  [[18,3],[17,4],[16,5],[17,5],[18,4]].forEach(([x,y])=>px(c,x,y,HORN,s));
+  [[20,2],[19,3],[18,2]].forEach(([x,y])=>px(c,x,y,HORN,s));
+  // ドラゴンの角（右）
+  [[30,3],[31,4],[32,5],[31,5],[30,4]].forEach(([x,y])=>px(c,x,y,HORN,s));
+  [[28,2],[29,3],[30,2]].forEach(([x,y])=>px(c,x,y,HORN,s));
+
+  // 兜（紫の竜型）
+  rect(c,13,4,35,20,PU,s);
+  row(c,4,17,31,PU,s);row(c,5,15,33,PU,s);
+  for(let y=6;y<=18;y++){px(c,13,y,DPU,s);px(c,35,y,DPU,s);}
+  // 兜ハイライト
+  for(let y=6;y<=14;y++)for(let x=15;x<=19;x++)px(c,x,y,LPU,s);
+  // 目スリット（赤く光る）
+  rect(c,14,12,34,15,DK,s);
+  rect(c,15,12,22,15,RED,s);
+  rect(c,26,12,33,15,RED,s);
+  // 目の炎
+  px(c,15,12,'#ff6020',s);px(c,16,12,'#ff6020',s);
+  px(c,26,12,'#ff6020',s);px(c,27,12,'#ff6020',s);
+  // 兜の金縁
+  row(c,20,13,35,GOLD,s);row(c,4,17,31,GOLD,s);
+
+  // 体（紫の竜鎧）
+  rect(c,12,21,36,40,PU,s);
+  rect(c,13,20,35,21,PU,s);
+  for(let y=21;y<=40;y++){px(c,12,y,DPU,s);px(c,36,y,DPU,s);}
+  // 鎧のウロコ模様
+  for(let row_=22;row_<=38;row_+=3){
+    for(let x=13;x<=35;x+=4){
+      px(c,x,row_,DPU,s);px(c,x+1,row_,DPU,s);
+      px(c,x+2,row_+1,LPU,s);
+    }
+  }
+  // 腰の帯
+  rect(c,12,38,36,41,DGOLD,s);
+  row(c,39,13,35,GOLD,s);
+
+  // 腕（左）紫鎧
+  rect(c,6,21,13,38,PU,s);
+  for(let y=21;y<=38;y++)px(c,6,y,DPU,s);
+  rect(c,5,20,13,22,GOLD,s); // 肩
+  rect(c,6,36,13,40,DGOLD,s); // 手甲
+  rect(c,7,39,13,43,PU,s); // 手
+
+  // 腕（右）紫鎧
+  rect(c,35,21,42,38,PU,s);
+  for(let y=21;y<=38;y++)px(c,42,y,DPU,s);
+  rect(c,35,20,44,22,GOLD,s); // 肩
+  rect(c,35,36,42,40,DGOLD,s); // 手甲
+  rect(c,35,39,41,43,PU,s); // 手
+
+  // 竜の槍（右手）
+  col_(c,45,2,44,DSIL,s);col_(c,46,2,44,SIL,s);
+  for(let y=3;y<=43;y++)px(c,45,y,WH,s);
+  // 槍先
+  [[44,1],[45,0],[46,1],[45,1]].forEach(([x,y])=>px(c,x,y,SIL,s));
+  // 槍の装飾（金）
+  rect(c,43,20,47,24,GOLD,s);px(c,43,22,'#ff6020',s);
+  // 柄
+  rect(c,44,43,46,47,DGOLD,s);
+
+  // 足（紫鎧）
+  rect(c,13,41,21,47,PU,s);
+  rect(c,27,41,35,47,PU,s);
+  for(let y=41;y<=47;y++){px(c,13,y,DPU,s);px(c,21,y,DPU,s);px(c,27,y,DPU,s);px(c,35,y,DPU,s);}
+  rect(c,12,45,22,47,DGOLD,s);
+  rect(c,26,45,36,47,DGOLD,s);
 }
 
-function drawDragon(cv){
-  const c=cv.getContext('2d'),s=cv.width/24;c.clearRect(0,0,cv.width,cv.height);
-  [[3,8],[4,8],[5,8],[3,9],[4,9],[5,9],[6,9],[3,10],[4,10],[5,10],[6,10],[7,10]].forEach(([x,y])=>px(c,x,y,'#40b888',s));
-  [[18,8],[19,8],[20,8],[17,9],[18,9],[19,9],[20,9],[16,10],[17,10],[18,10],[19,10],[20,10]].forEach(([x,y])=>px(c,x,y,'#40b888',s));
-  [[3,8],[4,8],[3,9],[4,9],[19,8],[20,8],[19,9],[20,9]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
-  [[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[7,11],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
-  [[10,11],[11,11],[12,11],[13,11],[10,12],[11,12],[12,12],[13,12],[11,13],[12,13]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
-  [[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[16,6],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
-  [[9,3],[10,3],[9,4],[10,4],[13,3],[14,3],[13,4],[14,4]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
-  [[10,6],[11,6],[13,6],[14,6]].forEach(([x,y])=>px(c,x,y,'#fff',s));
-  px(c,10,7,'#1030a0',s);px(c,13,7,'#1030a0',s);
-  px(c,11,6,'#80a0ff',s);px(c,14,6,'#80a0ff',s);
-  [[10,8],[11,8],[12,8],[13,8]].forEach(([x,y])=>px(c,x,y,'#80f0d0',s));
-  px(c,12,8,'#fff',s);
-  [[8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[14,4],[15,4],[16,4],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[12,2]].forEach(([x,y])=>px(c,x,y,'#1a1a1a',s));
-  [[15,4],[16,4],[16,5]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
-  [[15,13],[16,13],[15,14],[16,14],[17,14],[16,15],[17,15]].forEach(([x,y])=>px(c,x,y,'#28a060',s));
-  [[17,13],[17,14],[18,14]].forEach(([x,y])=>px(c,x,y,'#f5d020',s));
-  [[9,14],[10,14],[13,14],[14,14],[9,15],[10,15],[13,15],[14,15]].forEach(([x,y])=>px(c,x,y,'#1e8050',s));
+// 魔王（LV20+）
+function drawDemonKing(cv){
+  const c=cv.getContext('2d'),s=cv.width/48;c.clearRect(0,0,cv.width,cv.height);
+  const BK='#060410',PU='#1a0830',DPU='#0a0418',LPU='#8020e0',
+        GOLD='#f0c020',DGOLD='#907000',
+        RED='#ff0020',DRED='#800010',
+        WN='#050308',WNHL='#2a0a50',
+        ORB='#a000ff',WH='#ffffff',SKN='#c080b0';
+
+  // 大きな翼（左）
+  // 翼の骨格
+  for(let y=4;y<=44;y++){const w=Math.floor((44-y)/4)+2;rect(c,0,y,w,y,WN,s);}
+  rect(c,0,4,12,44,WN,s);
+  rect(c,2,8,10,42,WNHL,s);
+  // 翼先のトゲ
+  [[0,2],[1,3],[0,4]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[0,12],[1,11]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[0,22],[1,21]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[0,32],[1,31]].forEach(([x,y])=>px(c,x,y,WN,s));
+
+  // 大きな翼（右）
+  for(let y=4;y<=44;y++){const w=Math.floor((44-y)/4)+2;rect(c,48-w,y,47,y,WN,s);}
+  rect(c,36,4,47,44,WN,s);
+  rect(c,38,8,46,42,WNHL,s);
+  [[47,2],[46,3],[47,4]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[47,12],[46,11]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[47,22],[46,21]].forEach(([x,y])=>px(c,x,y,WN,s));
+  [[47,32],[46,31]].forEach(([x,y])=>px(c,x,y,WN,s));
+
+  // 王冠（金）
+  row(c,4,16,32,GOLD,s);
+  // 王冠のトゲ
+  col_(c,16,1,4,GOLD,s);col_(c,17,2,4,GOLD,s);
+  col_(c,23,0,4,GOLD,s);col_(c,24,0,4,GOLD,s);
+  col_(c,31,1,4,GOLD,s);col_(c,30,2,4,GOLD,s);
+  // 王冠の宝石
+  rect(c,22,0,25,3,RED,s);px(c,23,1,LPU,s);px(c,24,1,LPU,s); // 中央
+  px(c,15,2,RED,s);px(c,16,3,DGOLD,s); // 左
+  px(c,32,2,RED,s);px(c,31,3,DGOLD,s); // 右
+  row(c,4,15,33,DGOLD,s); // 王冠の縁
+
+  // 顔（紫がかった肌）
+  rect(c,14,5,34,22,SKN,s);
+  row(c,5,18,30,SKN,s);row(c,6,16,32,SKN,s);
+  row(c,22,17,31,SKN,s);row(c,23,19,29,SKN,s);
+
+  // 目（赤く光る）
+  rect(c,15,11,22,15,DK,s);
+  rect(c,16,11,21,14,DRED,s);
+  rect(c,17,12,20,14,RED,s);
+  px(c,17,11,'#ff8020',s);px(c,18,11,'#ff8020',s); // 輝き
+  rect(c,26,11,33,15,DK,s);
+  rect(c,27,11,32,14,DRED,s);
+  rect(c,28,12,31,14,RED,s);
+  px(c,27,11,'#ff8020',s);px(c,28,11,'#ff8020',s);
+
+  // 鼻・口
+  px(c,22,17,DPU,s);px(c,23,17,DPU,s);px(c,24,17,DPU,s);px(c,25,17,DPU,s);
+  row(c,19,18,30,DK,s);px(c,17,20,DK,s);px(c,31,20,DK,s);
+  // 牙
+  px(c,20,20,WH,s);px(c,21,21,WH,s);
+  px(c,27,20,WH,s);px(c,28,21,WH,s);
+
+  // ローブ（暗い紫）
+  rect(c,12,23,36,46,PU,s);
+  rect(c,13,22,35,23,PU,s);
+  for(let y=23;y<=46;y++){px(c,12,y,DPU,s);px(c,36,y,DPU,s);}
+  // ローブの光沢（縦線）
+  col_(c,23,23,46,LPU,s);col_(c,24,23,46,LPU,s);
+  // ローブの金縁
+  row(c,22,12,36,DGOLD,s);
+  // 胸の魔法陣
+  rect(c,18,26,30,36,DPU,s);
+  // 六芒星風
+  row(c,31,19,29,LPU,s);row(c,26,19,29,LPU,s);
+  col_(c,19,26,36,LPU,s);col_(c,29,26,36,LPU,s);
+  px(c,20,27,LPU,s);px(c,28,27,LPU,s);
+  px(c,20,35,LPU,s);px(c,28,35,LPU,s);
+  // 中央の宝珠（紫）
+  rect(c,22,30,26,32,ORB,s);px(c,23,30,WH,s);
+
+  // 腕（左）
+  rect(c,6,23,13,40,PU,s);
+  for(let y=23;y<=40;y++)px(c,6,y,DPU,s);
+  rect(c,5,22,13,24,DGOLD,s); // 肩
+  // 手（左）魔法の球
+  rect(c,5,39,13,44,PU,s);
+  rect(c,5,40,10,43,ORB,s); // 魔法球
+  px(c,6,40,WH,s);px(c,6,41,WH,s); // 輝き
+
+  // 腕（右）
+  rect(c,35,23,42,40,PU,s);
+  for(let y=23;y<=40;y++)px(c,42,y,DPU,s);
+  rect(c,35,22,44,24,DGOLD,s); // 肩
+  // 杖（右手）
+  col_(c,44,2,47,DGOLD,s);col_(c,45,2,46,GOLD,s);
+  // 杖の頭（宝石）
+  rect(c,42,0,47,4,DPU,s);
+  rect(c,43,0,46,3,ORB,s);
+  px(c,43,0,WH,s);px(c,44,0,WH,s); // 輝き
+  // 杖の装飾
+  rect(c,43,10,46,13,DGOLD,s);
+  rect(c,43,20,46,23,DGOLD,s);
+  // 手（右）
+  rect(c,37,39,43,44,PU,s);
+
+  // 足（ローブの裾から見える）
+  rect(c,14,44,21,47,DPU,s);
+  rect(c,27,44,34,47,DPU,s);
+  row(c,47,13,35,DGOLD,s); // 裾の金縁
+
+  // 魔法オーラ（体の周辺）
+  for(let i=0;i<6;i++){
+    const ox=[11,36,10,37,9,38][i],oy=[28,28,35,35,24,24][i];
+    px(c,ox,oy,LPU,s);
+  }
 }
 
-const DRAW_FNS=[drawHiyoko,drawUsagi,drawKitsune,drawOokami,drawDragon];
-const STAGE_NAMES=['ヒヨコ','ウサギ','キツネ','オオカミ','えいごりゅう'];
-function drawForLv(cv,lv){DRAW_FNS[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4](cv);}
-function stageForLv(lv){return STAGE_NAMES[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4];}
+const DRAW_FNS=[drawGoblin,drawSwordsman,drawKnight,drawDragonKnight,drawDemonKing];
+const STAGE_NAMES=['ゴブリン','けんし','きし','りゅうきし','まおう'];
+function drawForLv(cv,lv){DRAW_FNS[lv<=4?0:lv<=9?1:lv<=14?2:lv<=19?3:4](cv);}
+function stageForLv(lv){return STAGE_NAMES[lv<=4?0:lv<=9?1:lv<=14?2:lv<=19?3:4];}
 
 // ══════════════════════════════════════════
 //  STATE
@@ -609,8 +1070,15 @@ function stageForLv(lv){return STAGE_NAMES[lv<=20?0:lv<=40?1:lv<=60?2:lv<=80?3:4
 let db=null,roomId=null,mySlot=null,myName='',roomRef=null;
 let listeners=[];
 const MAX_HP=100;
-let state={p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null};
-let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false;
+let state={
+  p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},
+  phase:'waiting',turn:'p1',
+  charChoice:{p1:null,p2:null},
+  waza:{p1:null,p2:null},
+  status:{p1:null,p2:null},
+  question:null,roundResult:null,winner:null,wrongAnswers:null
+};
+let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false,myCharDone=false;
 let questionHistory=[];
 const Q_HISTORY_SIZE=15;
 
@@ -640,11 +1108,18 @@ async function createRoom(){
   const sv1=SAVE.loadProgress(name);
   document.getElementById('displayRoomCode').textContent=roomId;
   roomRef=db.ref('rooms/'+roomId);
-  await roomRef.set({p1:{name,hp:MAX_HP,lv:sv1.lv,exp:sv1.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},phase:'waiting',turn:'p1',waza:{p1:null,p2:null},question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()});
+  await roomRef.set({
+    p1:{name,hp:MAX_HP,lv:sv1.lv,exp:sv1.exp},p2:{name:'',hp:MAX_HP,lv:1,exp:0},
+    phase:'waiting',turn:'p1',
+    charChoice:{p1:null,p2:null},
+    waza:{p1:null,p2:null},
+    status:{p1:null,p2:null},
+    question:null,roundResult:null,winner:null,wrongAnswers:null,createdAt:Date.now()
+  });
   showScreen('screenWaiting');
   roomRef.on('value',snap=>{
     const d=snap.val();
-    if(d&&d.p2&&d.p2.name&&d.phase==='waza'){roomRef.off('value');state=d;startBattle();}
+    if(d&&d.p2&&d.p2.name&&d.phase==='charSelect'){roomRef.off('value');state=d;startBattle();}
   });
 }
 
@@ -661,7 +1136,7 @@ async function joinRoom(){
   const snap=await roomRef.once('value');const d=snap.val();
   if(!d) return setMsg('Join','そのへやはないよ','error');
   if(d.p2&&d.p2.name) return setMsg('Join','そのへやはもういっぱいだよ','error');
-  await roomRef.update({'p2/name':name,'p2/lv':sv2.lv,'p2/exp':sv2.exp,phase:'waza'});
+  await roomRef.update({'p2/name':name,'p2/lv':sv2.lv,'p2/exp':sv2.exp,phase:'charSelect'});
   const s2=await roomRef.once('value');state=s2.val();
   startBattle();
 }
@@ -685,13 +1160,11 @@ function enS(){return state[enSlot()];}
 function isTurn(){return state.turn===mySlot;}
 
 function startBattle(){
-  showScreen('screenBattle');
-  updateUI();
+  showScreen('screenCharSelect');
   listenRoom();
-  startWazaPhase();
+  startCharSelectPhase();
   SFX.se('start');
   setTimeout(()=>SFX.playBGM(),800);
-  log('バトルかいし！ さきにせいかいした方のかち！🔥');
 }
 
 function listenRoom(){
@@ -702,7 +1175,9 @@ function listenRoom(){
     state=d;
     updateUI();
     if(d.winner){endBattle(d.winner);return;}
-    if(d.phase==='waza'&&prev!=='waza') startWazaPhase();
+    if(d.phase==='charSelect'&&prev!=='charSelect') startCharSelectPhase();
+    if(d.phase==='charSelect'&&d.charChoice&&d.charChoice.p1&&d.charChoice.p2&&myCharDone&&isTurn()) roomRef.update({phase:'waza'});
+    if(d.phase==='waza'&&prev!=='waza'){showScreen('screenBattle');updateUI();startWazaPhase();log('バトルかいし！ さきにせいかいした方のかち！🔥');}
     if(d.phase==='question'&&prev!=='question') showQuestion(d.question);
     if(d.phase==='waza'&&myWazaDone&&d.waza&&d.waza[enSlot()]&&isTurn()) tryGenQ();
     if(d.phase==='question'&&d.wrongAnswers&&d.wrongAnswers.p1&&d.wrongAnswers.p2&&isTurn()){
@@ -712,6 +1187,47 @@ function listenRoom(){
     }
   });
   listeners.push(()=>roomRef.off('value',h));
+}
+
+// ─ CHAR SELECT PHASE ─
+function startCharSelectPhase(){
+  myCharDone=false;
+  showScreen('screenCharSelect');
+  document.getElementById('charSelectMsg').textContent='';
+  document.getElementById('charSelectTitle').textContent='どのキャラでたたかう？';
+  const grid=document.getElementById('charGrid'); grid.innerHTML='';
+  const lv=myS().lv;
+  CHARS.forEach(ch=>{
+    const locked=lv<ch.unlockLv;
+    const wrap=document.createElement('button');
+    wrap.className='char-btn'+(locked?' ':'');
+    wrap.disabled=locked;
+    const cv=document.createElement('canvas');
+    cv.className='char-canvas'; cv.width=48; cv.height=48;
+    if(!locked) ch.drawFn(cv);
+    else{const ctx=cv.getContext('2d');ctx.fillStyle='#1a1a3a';ctx.fillRect(0,0,48,48);}
+    const nm=document.createElement('div'); nm.className='char-name';
+    nm.textContent=locked?`LV${ch.unlockLv}〜`:ch.name;
+    const tp=document.createElement('div'); tp.className='char-type';
+    tp.textContent=locked?'？？？':`${ch.icon} ${ch.typeName}`;
+    wrap.appendChild(cv); wrap.appendChild(nm); wrap.appendChild(tp);
+    if(!locked) wrap.onclick=()=>pickChar(ch.id);
+    grid.appendChild(wrap);
+  });
+}
+
+async function pickChar(charId){
+  if(myCharDone) return;
+  myCharDone=true;
+  SFX.se('select');
+  document.querySelectorAll('.char-btn').forEach(b=>b.disabled=true);
+  const ch=charById(charId);
+  document.getElementById('charSelectMsg').textContent=`${ch.name}をえらんだ！あいてをまってるよ…`;
+  await roomRef.update({[`charChoice/${mySlot}`]:charId});
+  const snap=await roomRef.once('value'); const d=snap.val();
+  if(d.charChoice&&d.charChoice.p1&&d.charChoice.p2&&isTurn()){
+    await roomRef.update({phase:'waza'});
+  }
 }
 
 // ─ WAZA PHASE ─
@@ -800,7 +1316,9 @@ function showQuestion(q){
     b.className='cb';b.textContent=ch;b.onclick=()=>onAnswer(ch,q);
     g.appendChild(b);
   });
-  const totalTime=mw.id==='speed'?20:15;
+  const isPara=state.status&&state.status[mySlot]==='para';
+  const totalTime=isPara?8:15;
+  if(isPara) log('⚡ まひしている！タイマーが短い！');
   let left=totalTime;
   const fill=document.getElementById('timerFill');
   fill.style.width='100%';fill.style.background='var(--green)';
@@ -851,8 +1369,18 @@ async function onAnswer(chosen,q){
 
   const mw=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
   const ew=WAZA.find(x=>x.id===state.waza[enSlot()])||WAZA[0];
+  const myChar=charById(state.charChoice?.[mySlot]);
+  const enChar=charById(state.charChoice?.[enSlot()]);
   let dmg=mw.dmg;
   if(ew.id==='barrier') dmg=Math.floor(dmg/2);
+  // タイプ相性
+  const typeMult=getTypeMultiplier(myChar.type,enChar.type);
+  dmg=Math.round(dmg*typeMult);
+  // クリティカル（10%）
+  const isCrit=Math.random()<0.1;
+  if(isCrit) dmg=Math.round(dmg*1.5);
+  // 状態異常技
+  const newStatus=mw.status;
 
   const res=await roomRef.child('roundResult').transaction(cur=>{
     if(cur!==null) return;
@@ -874,9 +1402,16 @@ async function onAnswer(chosen,q){
     while(exp>=expNeeded(lv)&&lv<100){exp-=expNeeded(lv);lv++;}
     if(lv>oldLv) setTimeout(()=>{lvUpEffect(true);SFX.se('levelup');},800);
 
+    let dmgMsg=`✅ せいかい！ あいてに${dmg}ダメージ！`;
+    if(typeMult>=2) dmgMsg=`🔥 こうかはばつぐんだ！ ${dmg}ダメージ！`;
+    else if(typeMult<=0.5) dmgMsg=`😓 こうかはいまひとつ… ${dmg}ダメージ`;
+    if(isCrit) dmgMsg=`💥 CRITICAL！ ${dmg}ダメージ！！`;
+    if(newStatus) dmgMsg+=` ${newStatus==='poison'?'☠️どくを入れた！':'⚡まひさせた！'}`;
+    log(dmgMsg);
+
+    const statusUpdate=newStatus?{[`status/${enSlot()}`]:newStatus}:{};
     const won=newEnHp<=0;
-    log(`✅ ${myName}せいかい！ あいてに${dmg}ダメージ！`);
-    await roomRef.update({[`${enSlot()}/hp`]:newEnHp,[`${mySlot}/exp`]:exp,[`${mySlot}/lv`]:lv,phase:won?'ended':'roundEnd',winner:won?mySlot:null,turn:enSlot()});
+    await roomRef.update({[`${enSlot()}/hp`]:newEnHp,[`${mySlot}/exp`]:exp,[`${mySlot}/lv`]:lv,phase:won?'ended':'roundEnd',winner:won?mySlot:null,turn:enSlot(),...statusUpdate});
     if(won) log(`🏆 ${myName}のかち！`);
     else setTimeout(()=>nextRound(),2200);
   } else {
@@ -901,24 +1436,49 @@ async function onTimeout(q){
 
 async function nextRound(){
   const snap=await roomRef.once('value');
-  if(snap.val()?.winner) return;
-  await roomRef.update({phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null,wrongAnswers:null});
+  const d=snap.val();
+  if(!d||d.winner) return;
+  const updates={phase:'waza','waza/p1':null,'waza/p2':null,question:null,roundResult:null,wrongAnswers:null};
+  // 毒ダメージ（isTurnのプレイヤーが管理）
+  if(isTurn()){
+    for(const sl of['p1','p2']){
+      if(d.status&&d.status[sl]==='poison'){
+        const newHp=Math.max(0,(d[sl]?.hp||0)-5);
+        updates[`${sl}/hp`]=newHp;
+        if(sl===mySlot){spawnFloat('-5',true,'#d070ff');log('☠️ どくダメージ！ -5HP');}
+        else {spawnFloat('-5',false,'#d070ff');}
+        if(newHp<=0){updates.winner=sl==='p1'?'p2':'p1';updates.phase='ended';}
+      }
+    }
+    // まひは1ターンのみ（解除）
+    if(d.status?.p1==='para') updates['status/p1']=null;
+    if(d.status?.p2==='para') updates['status/p2']=null;
+  }
+  await roomRef.update(updates);
 }
 
 // ─ UI ─
 function updateUI(){
   const my=myS(),en=enS();
+  const myChar=charById(state.charChoice?.[mySlot]);
+  const enChar=charById(state.charChoice?.[enSlot()]);
+  const myStatus=state.status?.[mySlot];
+  const enStatus=state.status?.[enSlot()];
+  const statusBadge=(st)=>st==='poison'?'<span class="status-badge status-poison">☠️どく</span>':
+                           st==='para'?'<span class="status-badge status-para">⚡まひ</span>':'';
   document.getElementById('playerName').textContent=my.name||myName;
   document.getElementById('enemyName').textContent=en.name||'？？？';
-  document.getElementById('playerLv').textContent=`LV.${my.lv} ${stageForLv(my.lv)}`;
-  document.getElementById('enemyLv').textContent=`LV.${en.lv} ${stageForLv(en.lv)}`;
+  document.getElementById('playerLv').innerHTML=`LV.${my.lv} ${myChar.name}${statusBadge(myStatus)}`;
+  document.getElementById('enemyLv').innerHTML=`LV.${en.lv} ${enChar.name}${statusBadge(enStatus)}`;
   document.getElementById('playerHpNums').textContent=`${my.hp}/${MAX_HP}`;
   setHp('playerHpFill',(my.hp/MAX_HP)*100);
   setHp('enemyHpFill',(en.hp/MAX_HP)*100);
   const need=expNeeded(my.lv);
   document.getElementById('expFill').style.width=((my.exp/need)*100)+'%';
-  drawForLv(document.getElementById('playerCanvas'),my.lv);
-  drawForLv(document.getElementById('enemyCanvas'),en.lv);
+  if(state.charChoice?.[mySlot]) drawCharId(document.getElementById('playerCanvas'),state.charChoice[mySlot]);
+  else drawGoblin(document.getElementById('playerCanvas'));
+  if(state.charChoice?.[enSlot()]) drawCharId(document.getElementById('enemyCanvas'),state.charChoice[enSlot()]);
+  else drawGoblin(document.getElementById('enemyCanvas'));
 }
 
 function setHp(id,pct){
@@ -971,7 +1531,10 @@ async function playAgain(){
     if(mySlot==='p1'){
       await roomRef.update({
         'p1/hp':MAX_HP,'p2/hp':MAX_HP,
-        phase:'waza','waza/p1':null,'waza/p2':null,
+        phase:'charSelect',
+        'charChoice/p1':null,'charChoice/p2':null,
+        'waza/p1':null,'waza/p2':null,
+        'status/p1':null,'status/p2':null,
         question:null,roundResult:null,winner:null,
         wrongAnswers:null,rematch:null,turn:'p1'
       });
@@ -993,7 +1556,7 @@ function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classL
 function setMsg(scr,msg,type=''){const el=document.getElementById('msg'+scr);if(!el)return;el.textContent=msg;el.className='msg '+type;}
 
 // INIT
-drawHiyoko(document.getElementById('titleCanvas'));
+drawGoblin(document.getElementById('titleCanvas'));
 </script>
 </body>
 </html>
