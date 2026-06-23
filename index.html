@@ -180,6 +180,7 @@ input[type=text]:focus{border-color:var(--green);}
 .dmg-flash.hit{border:9px solid rgba(233,69,96,.7);}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 .shake-el{animation:shake .32s ease;}
+.word-hint{color:var(--blue);font-size:.78rem;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -1082,7 +1083,7 @@ let state={
   roundAnswer:{p1:null,p2:null},
   roundResult:null,winner:null
 };
-let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false,myCharDone=false;
+let timerIv=null,wazaIv=null,myWazaDone=false,answerBusy=false,roundOwner=false,myCharDone=false,wrongWords=[];
 let questionHistory=[];
 const Q_HISTORY_SIZE=15;
 
@@ -1279,7 +1280,7 @@ async function tryGenQ(){
   const snap=await roomRef.once('value');const d=snap.val();
   if(d.phase!=='waza') return;
   if(!d.waza||!d.waza.p1||!d.waza.p2) return;
-  const q1=makeQ(),q2=makeQ();
+  const q1=makeQ(d.waza.p1),q2=makeQ(d.waza.p2);
   await roomRef.update({
     phase:'question',
     'questions/p1':q1,'questions/p2':q2,
@@ -1288,7 +1289,9 @@ async function tryGenQ(){
   });
 }
 
-function makeQ(){
+function makeQ(wazaId='normal'){
+  // アタック・ギャンブルは日→英の難問
+  const useJpEn = (wazaId==='attack'||wazaId==='gamble');
   const lv=Math.max(myS().lv,enS().lv);
   let pool=[];
   CATEGORIES.forEach(cat=>{if(lv>=cat.minLv)pool=pool.concat(cat.words);});
@@ -1303,8 +1306,13 @@ function makeQ(){
   questionHistory.push(word.en);
   if(questionHistory.length>Q_HISTORY_SIZE) questionHistory.shift();
   const all=[];CATEGORIES.forEach(cat=>all.push(...cat.words));
-  const wrongs=all.filter(w=>w.jp!==word.jp).sort(()=>Math.random()-.5).slice(0,3).map(w=>w.jp);
-  return{en:word.en,answer:word.jp,choices:[...wrongs,word.jp].sort(()=>Math.random()-.5),startedAt:Date.now()};
+  if(useJpEn){
+    const wrongs=all.filter(w=>w.en!==word.en).sort(()=>Math.random()-.5).slice(0,3).map(w=>w.en);
+    return{en:word.en,jp:word.jp,type:'jp2en',question:word.jp,answer:word.en,choices:[...wrongs,word.en].sort(()=>Math.random()-.5),startedAt:Date.now()};
+  } else {
+    const wrongs=all.filter(w=>w.jp!==word.jp).sort(()=>Math.random()-.5).slice(0,3).map(w=>w.jp);
+    return{en:word.en,jp:word.jp,type:'en2jp',question:word.en,answer:word.jp,choices:[...wrongs,word.jp].sort(()=>Math.random()-.5),startedAt:Date.now()};
+  }
 }
 
 // ─ QUESTION PHASE ─
@@ -1313,10 +1321,11 @@ function showQuestion(q){
   clearInterval(timerIv);
   hidePhases();
   document.getElementById('phaseQ').style.display='';
-  document.getElementById('qWord').textContent=q.en;
+  document.getElementById('qWord').textContent=q.question||q.en;
   const mw=WAZA.find(x=>x.id===state.waza[mySlot])||WAZA[0];
   const ew=WAZA.find(x=>x.id===state.waza[enSlot()])||WAZA[0];
-  document.getElementById('qInfo').textContent=`あなた: ${mw.icon}${mw.name}  あいて: ${ew.icon}${ew.name}`;
+  const qTypeLabel=q.type==='jp2en'?'📝 日→英（むずかしい）':'📖 英→日';
+  document.getElementById('qInfo').textContent=`${qTypeLabel}  あなた:${mw.icon}${mw.name}  あいて:${ew.icon}${ew.name}`;
   const g=document.getElementById('choicesGrid');g.innerHTML='';
   q.choices.forEach(ch=>{
     const b=document.createElement('button');
@@ -1352,8 +1361,13 @@ async function onAnswer(chosen,q){
     else b.classList.add('dimmed');
   });
   SFX.se(correct?'correct':'wrong');
-  if(correct) log('✅ せいかい！あいてのこたえをまってるよ…');
-  else log('❌ まちがい… あいてのこたえをまってるよ');
+  const wordHint=`${q.en} ＝ ${q.jp||q.answer}`;
+  if(correct){
+    log(`✅ せいかい！  📖 ${wordHint}  あいてのこたえをまってるよ…`);
+  } else {
+    wrongWords.push({en:q.en,jp:q.jp||q.answer});
+    log(`❌ まちがい！  📖 ${wordHint}  あいてのこたえをまってるよ`);
+  }
   await roomRef.update({[`roundAnswer/${mySlot}`]:correct});
   const snap=await roomRef.once('value');const d=snap.val();
   if(d.roundAnswer&&d.roundAnswer.p1!==null&&d.roundAnswer.p2!==null&&isTurn()){
@@ -1367,7 +1381,9 @@ async function onTimeout(q){
   clearInterval(timerIv);
   document.querySelectorAll('.cb').forEach(b=>b.disabled=true);
   SFX.se('timeout');
-  log('⏰ じかんぎれ！ こうげきできなかった…');
+  const timeoutHint=q?`  📖 ${q.en} ＝ ${q.jp||q.answer}`:'';
+  if(q) wrongWords.push({en:q.en,jp:q.jp||q.answer});
+  log(`⏰ じかんぎれ！${timeoutHint}`);
   spawnFloat('⏰',true,'#f5a623');
   await roomRef.update({[`roundAnswer/${mySlot}`]:false});
   const snap=await roomRef.once('value');const d=snap.val();
@@ -1387,7 +1403,7 @@ async function calculateRoundResult(d){
   const updates={};
   let msgs=[];
 
-  // 自分の攻撃
+  // 自分の攻撃計算
   let enDmg=0;
   if(myCorrect){
     let dmg=mw.dmg;
@@ -1399,6 +1415,7 @@ async function calculateRoundResult(d){
     enDmg=dmg;
     let msg=`✅ ${myName}`;
     if(typeMult>=2) msg+=` 🔥ばつぐん！`;
+    else if(typeMult<1) msg+=` ⬇いまひとつ`;
     if(isCrit) msg+=` 💥CRITICAL！`;
     msg+=` ${dmg}ダメ！`;
     msgs.push(msg);
@@ -1411,7 +1428,7 @@ async function calculateRoundResult(d){
     msgs.push(`❌ ${myName}まちがい`);
   }
 
-  // 相手の攻撃
+  // 相手の攻撃計算
   let myDmg=0;
   if(enCorrect){
     let dmg=ew.dmg;
@@ -1423,12 +1440,30 @@ async function calculateRoundResult(d){
     myDmg=dmg;
     let msg=`⚔️ ${d[enSlot()].name}`;
     if(typeMult>=2) msg+=` 🔥ばつぐん！`;
+    else if(typeMult<1) msg+=` ⬇いまひとつ`;
     if(isCrit) msg+=` 💥CRITICAL！`;
     msg+=` ${dmg}ダメ！`;
     msgs.push(msg);
     if(ew.status) updates[`status/${mySlot}`]=ew.status;
   } else {
     msgs.push(`✨ ${d[enSlot()].name}もまちがい！まぬがれた！`);
+  }
+
+  // ─ 先攻・後攻システム ─
+  // 正解した方が先攻。自分だけ正解→一方的攻撃。両方正解→LV高い方が先攻、倒せたら反撃なし
+  if(myCorrect && !enCorrect){
+    myDmg=0; // 相手不正解→反撃なし
+  } else if(!myCorrect && enCorrect){
+    enDmg=0; // 自分不正解→攻撃できない
+  } else if(myCorrect && enCorrect){
+    const myGoFirst=d[mySlot].lv>=d[enSlot()].lv;
+    if(myGoFirst && enDmg>0 && Math.max(0,d[enSlot()].hp-enDmg)<=0){
+      myDmg=0;
+      msgs.push(`⚡ ${myName}が先攻で撃破！反撃なし！`);
+    } else if(!myGoFirst && myDmg>0 && Math.max(0,d[mySlot].hp-myDmg)<=0){
+      enDmg=0;
+      msgs.push(`⚡ ${d[enSlot()].name}が先攻で撃破！反撃なし！`);
+    }
   }
 
   // アニメーション
@@ -1532,14 +1567,19 @@ function endBattle(ws){
   t.textContent=won?'🎉 WIN！':'💀 LOSE…';
   t.className='result-title '+(won?'result-win':'result-lose');
   drawForLv(document.getElementById('resultCanvas'),myS().lv);
-  document.getElementById('resultMsg').innerHTML=
-    won?`すごい！${myName}のかち！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`
-       :`つぎはかつぞ！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`;
+  const baseMsg=won
+    ?`すごい！${myName}のかち！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`
+    :`つぎはかつぞ！<br>LV.${myS().lv} 「${stageForLv(myS().lv)}」<br><span style="font-size:.7rem;color:var(--green)">💾 セーブしたよ！</span>`;
+  const uniqueWrong=[...new Map(wrongWords.map(w=>[w.en,w])).values()];
+  const wrongList=uniqueWrong.length>0
+    ?`<div style="margin-top:10px;text-align:left;border-top:1px solid var(--border);padding-top:8px"><div style="font-size:.7rem;color:var(--gold);margin-bottom:4px">📚 まちがえた単語（${uniqueWrong.length}こ）</div>${uniqueWrong.map(w=>`<div style="font-size:.72rem;line-height:1.9"><span style="color:var(--gold);display:inline-block;min-width:90px">${w.en}</span><span style="color:var(--green)">＝ ${w.jp}</span></div>`).join('')}</div>`
+    :`<div style="margin-top:8px;font-size:.72rem;color:var(--muted)">📚 まちがえた単語なし！かんぺき！✨</div>`;
+  document.getElementById('resultMsg').innerHTML=baseMsg+wrongList;
 }
 
 async function playAgain(){
   SFX.stopBGM();
-  questionHistory=[];
+  questionHistory=[];wrongWords=[];
   const btn=document.querySelector('#screenResult .btn-green');
   btn.disabled=true;btn.textContent='まってるよ…';
 
