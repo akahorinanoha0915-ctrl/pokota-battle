@@ -538,12 +538,12 @@ const CATEGORIES=[
 ];
 
 const WAZA=[
-  {id:"normal", name:"ノーマル", icon:"⚔️",unlockLv:1, desc:"ふつうのこうげき",     dmg:20, status:null},
-  {id:"attack", name:"アタック", icon:"💥",unlockLv:3, desc:"ダメージ2ばい！",      dmg:40, status:null},
-  {id:"barrier",name:"バリア",   icon:"🛡️",unlockLv:6, desc:"うけるダメージ半分",  dmg:20, status:null},
-  {id:"para",   name:"まひ",     icon:"⚡",unlockLv:8, desc:"相手タイマー半減！",   dmg:10, status:"para"},
-  {id:"poison", name:"どく",     icon:"☠️",unlockLv:12,desc:"毒！毎ターン-5",       dmg:15, status:"poison"},
-  {id:"gamble", name:"ギャンブル",icon:"🎲",unlockLv:15,desc:"かち→3倍 まけ→2倍",  dmg:60, status:null},
+  {id:"normal", name:"ノーマル", icon:"⚔️",unlockLv:1, desc:"ふつうのこうげき",     dmg:25, status:null},
+  {id:"attack", name:"アタック", icon:"💥",unlockLv:3, desc:"ダメージ大！日→英問題",dmg:50, status:null},
+  {id:"barrier",name:"バリア",   icon:"🛡️",unlockLv:6, desc:"うけるダメージ半分",  dmg:25, status:null},
+  {id:"para",   name:"まひ",     icon:"⚡",unlockLv:8, desc:"相手タイマー半減！",   dmg:15, status:"para"},
+  {id:"poison", name:"どく",     icon:"☠️",unlockLv:12,desc:"毒！毎ターン-10",      dmg:20, status:"poison"},
+  {id:"gamble", name:"ギャンブル",icon:"🎲",unlockLv:15,desc:"大ダメージ！日→英問題",dmg:80, status:null},
 ];
 
 // キャラクター定義
@@ -1072,7 +1072,7 @@ function stageForLv(lv){return STAGE_NAMES[lv<=4?0:lv<=9?1:lv<=14?2:lv<=19?3:4];
 // ══════════════════════════════════════════
 let db=null,roomId=null,mySlot=null,myName='',roomRef=null;
 let listeners=[];
-const MAX_HP=100;
+const MAX_HP=200;
 let state={
   p1:{name:'',hp:MAX_HP,lv:1,exp:0},p2:{name:'',hp:MAX_HP,lv:1,exp:0},
   phase:'waiting',turn:'p1',
@@ -1499,10 +1499,10 @@ async function nextRound(){
   if(isTurn()){
     for(const sl of['p1','p2']){
       if(d.status&&d.status[sl]==='poison'){
-        const newHp=Math.max(0,(d[sl]?.hp||0)-5);
+        const newHp=Math.max(0,(d[sl]?.hp||0)-10);
         updates[`${sl}/hp`]=newHp;
-        if(sl===mySlot){spawnFloat('-5',true,'#d070ff');log('☠️ どくダメージ！ -5HP');}
-        else {spawnFloat('-5',false,'#d070ff');}
+        if(sl===mySlot){spawnFloat('-10',true,'#d070ff');log('☠️ どくダメージ！ -10HP');}
+        else {spawnFloat('-10',false,'#d070ff');}
         if(newHp<=0){updates.winner=sl==='p1'?'p2':'p1';updates.phase='ended';}
       }
     }
